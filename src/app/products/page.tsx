@@ -23,7 +23,8 @@ export default function ProductsPage() {
     () => (firestore ? collection(firestore, 'products') : null),
     [firestore]
   );
-  const { data: products = [], isLoading } = useCollection<Product>(productsCollection);
+  const { data: productsData, isLoading } = useCollection<Product>(productsCollection);
+  const products = productsData || [];
 
   return (
     <div className="p-4 md:p-8">

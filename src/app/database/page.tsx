@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -68,10 +68,12 @@ export default function DatabasePage() {
     [firestore]
   );
 
-  const { data: products = [], isLoading: productsLoading } =
+  const { data: productsData, isLoading: productsLoading } =
     useCollection<Product>(productsCollection);
-  const { data: customers = [], isLoading: customersLoading } =
+  const products = productsData || [];
+  const { data: customersData, isLoading: customersLoading } =
     useCollection<Customer>(customersCollection);
+  const customers = customersData || [];
 
   const [orders, setOrders] = useState(initialOrders);
 

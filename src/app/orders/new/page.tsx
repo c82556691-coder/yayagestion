@@ -26,8 +26,10 @@ export default function NewOrderPage() {
     [firestore]
   );
 
-  const { data: products = [] } = useCollection<Product>(productsCollection);
-  const { data: customers = [] } = useCollection<Customer>(customersCollection);
+  const { data: productsData } = useCollection<Product>(productsCollection);
+  const products = productsData || [];
+  const { data: customersData } = useCollection<Customer>(customersCollection);
+  const customers = customersData || [];
 
   const [customer, setCustomer] = useState<Customer | undefined>();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);

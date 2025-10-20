@@ -44,7 +44,8 @@ export default function CustomersPage() {
     [firestore]
   );
 
-  const { data: customers = [], isLoading } = useCollection<Customer>(customersCollection);
+  const { data: customersData, isLoading } = useCollection<Customer>(customersCollection);
+  const customers = customersData || [];
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '' });
