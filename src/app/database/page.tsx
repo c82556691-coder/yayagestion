@@ -223,7 +223,7 @@ export default function DatabasePage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteProduct(product.id)}
+                              onClick={() => handleDeleteProduct(product.id!)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -310,7 +310,7 @@ export default function DatabasePage() {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteCustomer(customer.id)}
+                                onClick={() => handleDeleteCustomer(customer.id!)}
                             >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
