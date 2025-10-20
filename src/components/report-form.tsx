@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { generateSummaryAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ function SubmitButton() {
 }
 
 export function ReportForm() {
-  const [state, formAction] = useFormState(generateSummaryAction, initialState);
+  const [state, formAction] = useActionState(generateSummaryAction, initialState);
 
   return (
     <div className="space-y-8">
