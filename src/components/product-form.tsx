@@ -8,8 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Product } from '@/lib/definitions';
 
 interface ProductFormProps {
-  product: Product | null;
-  onSave: (product: Product) => void;
+  product: Partial<Product> | null;
+  onSave: (product: Partial<Product>) => void;
   onCancel: () => void;
 }
 
@@ -30,6 +30,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         description: '',
         price: 0,
         stock: 0,
+        imageId: '',
       });
     }
   }, [product]);
@@ -44,7 +45,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as Product);
+    onSave(formData);
   };
 
   return (
@@ -64,7 +65,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         <Textarea
           id="description"
           name="description"
-          value={formData.description}
+          value={formData.description || ''}
           onChange={handleChange}
           required
         />

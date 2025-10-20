@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -22,12 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import {
-  products as initialProducts,
-  customers as initialCustomers,
-  orders as initialOrders,
-  PlaceHolderImages,
-} from '@/lib/data';
+import { orders as initialOrders, PlaceHolderImages } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
@@ -39,13 +34,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Product, Customer } from '@/lib/definitions';
 import { ProductForm } from '@/components/product-form';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import {
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  setDocumentNonBlocking,
+} from '@/firebase/non-blocking-updates';
+import { collection, doc } from 'firebase/firestore';
 
 const statusVariant: {
   [key: string]: 'default' | 'secondary' | 'destructive' | 'outline';
@@ -57,57 +58,74 @@ const statusVariant: {
 };
 
 export default function DatabasePage() {
-  const [products, setProducts] = useState(initialProducts);
-  const [customers, setCustomers] = useState(initialCustomers);
+  const firestore = useFirestore();
+  const productsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'products') : null),
+    [firestore]
+  );
+  const customersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'customers') : null),
+    [firestore]
+  );
+
+  const { data: products = [], isLoading: productsLoading } =
+    useCollection<Product>(productsCollection);
+  const { data: customers = [], isLoading: customersLoading } =
+    useCollection<Customer>(customersCollection);
+
   const [orders, setOrders] = useState(initialOrders);
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Partial<Customer> | null>(null);
 
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
 
-  const handleSaveProduct = (product: Product) => {
-    if (editingProduct) {
-      setProducts(
-        products.map((p) => (p.id === product.id ? product : p))
-      );
+  const handleSaveProduct = (product: Partial<Product>) => {
+    if (!productsCollection) return;
+
+    if (product.id) {
+      const productRef = doc(productsCollection, product.id);
+      const { id, ...productData } = product;
+      setDocumentNonBlocking(productRef, productData, { merge: true });
     } else {
-      const newProduct = {
+      addDocumentNonBlocking(productsCollection, {
         ...product,
-        id: `prod${products.length + 1}`,
         imageId: `prod${(products.length % 8) + 1}`,
-      };
-      setProducts([...products, newProduct]);
+      });
     }
     setIsProductDialogOpen(false);
     setEditingProduct(null);
   };
 
   const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter((p) => p.id !== productId));
+    if (!productsCollection) return;
+    const productRef = doc(productsCollection, productId);
+    deleteDocumentNonBlocking(productRef);
   };
-  
+
   const handleSaveCustomer = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingCustomer) return;
+    if (!editingCustomer || !customersCollection) return;
 
     if (editingCustomer.id) {
-         setCustomers(customers.map(c => c.id === editingCustomer.id ? editingCustomer : c));
+      const customerRef = doc(customersCollection, editingCustomer.id);
+      const { id, ...customerData } = editingCustomer;
+      setDocumentNonBlocking(customerRef, customerData, { merge: true });
     } else {
-        const newCustomerData = {
-            ...editingCustomer,
-            id: `cust${customers.length + 1}`,
-            imageId: `customer${(customers.length % 5) + 1}`,
-        }
-        setCustomers([...customers, newCustomerData]);
+      addDocumentNonBlocking(customersCollection, {
+        ...editingCustomer,
+        imageId: `customer${(customers.length % 5) + 1}`,
+      });
     }
     setIsCustomerDialogOpen(false);
     setEditingCustomer(null);
   };
 
   const handleDeleteCustomer = (customerId: string) => {
-    setCustomers(customers.filter((c) => c.id !== customerId));
+    if (!customersCollection) return;
+    const customerRef = doc(customersCollection, customerId);
+    deleteDocumentNonBlocking(customerRef);
   };
 
   return (
@@ -131,7 +149,12 @@ export default function DatabasePage() {
                     Una lista de todos los productos en tu inventario.
                   </CardDescription>
                 </div>
-                <Button onClick={() => { setEditingProduct(null); setIsProductDialogOpen(true); }}>
+                <Button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setIsProductDialogOpen(true);
+                  }}
+                >
                   <PlusCircle className="mr-2 h-4 w-4" /> Añadir Producto
                 </Button>
               </div>
@@ -147,45 +170,68 @@ export default function DatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => {
-                    const image = PlaceHolderImages.find(
-                      (p) => p.id === product.imageId
-                    );
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {image && (
-                              <Image
-                                src={image.imageUrl}
-                                alt={product.name}
-                                width={40}
-                                height={40}
-                                className="rounded-md object-cover"
-                                data-ai-hint={image.imageHint}
-                              />
-                            )}
-                            <div>
-                                <span className="font-medium">{product.name}</span>
-                                <p className="text-sm text-muted-foreground">{product.description}</p>
+                  {productsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Cargando productos...
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((product) => {
+                      const image = PlaceHolderImages.find(
+                        (p) => p.id === product.imageId
+                      );
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {image && (
+                                <Image
+                                  src={image.imageUrl}
+                                  alt={product.name}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-md object-cover"
+                                  data-ai-hint={image.imageHint}
+                                />
+                              )}
+                              <div>
+                                <span className="font-medium">
+                                  {product.name}
+                                </span>
+                                <p className="text-sm text-muted-foreground">
+                                  {product.description}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{product.stock}</TableCell>
-                        <TableCell className="text-right">
-                          ${product.price.toFixed(2)}
-                        </TableCell>
-                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => { setEditingProduct(product); setIsProductDialogOpen(true); }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                          <TableCell>{product.stock}</TableCell>
+                          <TableCell className="text-right">
+                            ${product.price.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingProduct(product);
+                                setIsProductDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -194,15 +240,22 @@ export default function DatabasePage() {
         <TabsContent value="customers">
           <Card>
             <CardHeader>
-                 <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>Clientes</CardTitle>
-                        <CardDescription>Una lista de todos los clientes.</CardDescription>
-                    </div>
-                    <Button onClick={() => { setEditingCustomer({ id: '', name: '', email: '', imageId: '' }); setIsCustomerDialogOpen(true); }}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Cliente
-                    </Button>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Clientes</CardTitle>
+                  <CardDescription>
+                    Una lista de todos los clientes.
+                  </CardDescription>
                 </div>
+                <Button
+                  onClick={() => {
+                    setEditingCustomer({ name: '', email: '', imageId: '' });
+                    setIsCustomerDialogOpen(true);
+                  }}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" /> Añadir Cliente
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -214,39 +267,58 @@ export default function DatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customers.map((customer) => {
-                    const image = PlaceHolderImages.find(
-                      (p) => p.id === customer.imageId
-                    );
-                    return (
-                      <TableRow key={customer.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage
-                                src={image?.imageUrl}
-                                alt={customer.name}
-                                data-ai-hint={image?.imageHint}
-                              />
-                              <AvatarFallback>
-                                {customer.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{customer.name}</span>
-                          </div>
+                  {customersLoading ? (
+                     <TableRow>
+                        <TableCell colSpan={3} className="text-center">
+                            Cargando clientes...
                         </TableCell>
-                        <TableCell>{customer.email}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => { setEditingCustomer(customer); setIsCustomerDialogOpen(true); }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteCustomer(customer.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                    </TableRow>
+                  ) : (
+                    customers.map((customer) => {
+                        const image = PlaceHolderImages.find(
+                        (p) => p.id === customer.imageId
+                        );
+                        return (
+                        <TableRow key={customer.id}>
+                            <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Avatar>
+                                <AvatarImage
+                                    src={image?.imageUrl}
+                                    alt={customer.name}
+                                    data-ai-hint={image?.imageHint}
+                                />
+                                <AvatarFallback>
+                                    {customer.name.charAt(0)}
+                                </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{customer.name}</span>
+                            </div>
+                            </TableCell>
+                            <TableCell>{customer.email}</TableCell>
+                            <TableCell className="text-right">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                setEditingCustomer(customer);
+                                setIsCustomerDialogOpen(true);
+                                }}
+                            >
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteCustomer(customer.id)}
+                            >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                            </TableCell>
+                        </TableRow>
+                        );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -294,65 +366,92 @@ export default function DatabasePage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isProductDialogOpen} onOpenChange={(isOpen) => {
+      <Dialog
+        open={isProductDialogOpen}
+        onOpenChange={(isOpen) => {
           if (!isOpen) setEditingProduct(null);
           setIsProductDialogOpen(isOpen);
-      }}>
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
+            <DialogTitle>
+              {editingProduct?.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}
+            </DialogTitle>
           </DialogHeader>
-          <ProductForm product={editingProduct} onSave={handleSaveProduct} onCancel={() => { setIsProductDialogOpen(false); setEditingProduct(null); }} />
+          <ProductForm
+            product={editingProduct}
+            onSave={handleSaveProduct}
+            onCancel={() => {
+              setIsProductDialogOpen(false);
+              setEditingProduct(null);
+            }}
+          />
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={isCustomerDialogOpen} onOpenChange={(isOpen) => {
-        if (!isOpen) setEditingCustomer(null);
-        setIsCustomerDialogOpen(isOpen);
-      }}>
+
+      <Dialog
+        open={isCustomerDialogOpen}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setEditingCustomer(null);
+          setIsCustomerDialogOpen(isOpen);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{editingCustomer?.id ? 'Editar Cliente' : 'Añadir Nuevo Cliente'}</DialogTitle>
-            </DialogHeader>
-            {editingCustomer && (
-              <form onSubmit={handleSaveCustomer}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Nombre
-                    </Label>
-                    <Input
-                      id="name"
-                      value={editingCustomer.name}
-                      onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
-                      className="col-span-3"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={editingCustomer.email}
-                      onChange={(e) => setEditingCustomer({ ...editingCustomer, email: e.target.value })}
-                      className="col-span-3"
-                      required
-                    />
-                  </div>
+          <DialogHeader>
+            <DialogTitle>
+              {editingCustomer?.id ? 'Editar Cliente' : 'Añadir Nuevo Cliente'}
+            </DialogTitle>
+          </DialogHeader>
+          {editingCustomer && (
+            <form onSubmit={handleSaveCustomer}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Nombre
+                  </Label>
+                  <Input
+                    id="name"
+                    value={editingCustomer.name}
+                    onChange={(e) =>
+                      setEditingCustomer({
+                        ...editingCustomer,
+                        name: e.target.value,
+                      })
+                    }
+                    className="col-span-3"
+                    required
+                  />
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Cancelar
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit">Guardar Cambios</Button>
-                </DialogFooter>
-              </form>
-            )}
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editingCustomer.email}
+                    onChange={(e) =>
+                      setEditingCustomer({
+                        ...editingCustomer,
+                        email: e.target.value,
+                      })
+                    }
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit">Guardar Cambios</Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

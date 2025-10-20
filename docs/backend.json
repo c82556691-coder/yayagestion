@@ -1,15 +1,10 @@
 {
   "entities": {
     "Product": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
       "description": "Represents a product in the catalog.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the product."
-        },
         "name": {
           "type": "string",
           "description": "Name of the product."
@@ -22,130 +17,47 @@
           "type": "number",
           "description": "Price of the product."
         },
-        "imageUrl": {
+        "imageId": {
           "type": "string",
-          "description": "URL of the product image.",
+          "description": "ID of the product image.",
           "format": "uri"
         },
-        "stockLevel": {
+        "stock": {
           "type": "number",
           "description": "Current stock level of the product."
         }
       },
       "required": [
-        "id",
         "name",
         "description",
         "price",
-        "imageUrl",
-        "stockLevel"
+        "imageId",
+        "stock"
       ]
     },
     "Customer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Customer",
       "type": "object",
       "description": "Represents a customer.",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the customer."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "First name of the customer."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the customer."
+          "description": "Full name of the customer."
         },
         "email": {
           "type": "string",
           "description": "Email address of the customer.",
           "format": "email"
         },
-        "phone": {
+        "imageId": {
           "type": "string",
-          "description": "Phone number of the customer."
-        },
-        "address": {
-          "type": "string",
-          "description": "Address of the customer."
+          "description": "ID for the customer's avatar image."
         }
       },
       "required": [
-        "id",
-        "firstName",
-        "lastName",
+        "name",
         "email",
-        "phone",
-        "address"
-      ]
-    },
-    "SalesOrder": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SalesOrder",
-      "type": "object",
-      "description": "Represents a sales order.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the sales order."
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to Customer. (Relationship: Customer 1:N SalesOrder)"
-        },
-        "orderDate": {
-          "type": "string",
-          "description": "Date the order was placed.",
-          "format": "date-time"
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "Total amount of the order."
-        }
-      },
-      "required": [
-        "id",
-        "customerId",
-        "orderDate",
-        "totalAmount"
-      ]
-    },
-    "SalesOrderItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SalesOrderItem",
-      "type": "object",
-      "description": "Represents an item within a sales order.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the sales order item."
-        },
-        "salesOrderId": {
-          "type": "string",
-          "description": "Reference to SalesOrder. (Relationship: SalesOrder 1:N SalesOrderItem)"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product 1:N SalesOrderItem)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the product ordered."
-        },
-        "unitPrice": {
-          "type": "number",
-          "description": "Price of a single unit of the product at the time of the order."
-        }
-      },
-      "required": [
-        "id",
-        "salesOrderId",
-        "productId",
-        "quantity",
-        "unitPrice"
+        "imageId"
       ]
     }
   },
@@ -156,84 +68,17 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/products/{productId}",
-        "definition": {
-          "entityName": "Product",
-          "schema": {
-            "$ref": "#/backend/entities/Product"
-          },
-          "description": "Stores product information.  `productId` is the unique identifier for the product.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "The unique identifier of the product."
-            }
-          ]
-        }
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
       },
-      {
-        "path": "/customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "schema": {
-            "$ref": "#/backend/entities/Customer"
-          },
-          "description": "Stores customer information. `customerId` is the unique identifier for the customer.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            }
-          ]
-        }
+      "description": "Stores all product information for the catalog."
+    },
+    "/customers/{customerId}": {
+      "schema": {
+        "$ref": "#/entities/Customer"
       },
-      {
-        "path": "/customers/{customerId}/sales_orders/{salesOrderId}",
-        "definition": {
-          "entityName": "SalesOrder",
-          "schema": {
-            "$ref": "#/backend/entities/SalesOrder"
-          },
-          "description": "Stores sales order information for a specific customer. `customerId` is the customer's ID, and `salesOrderId` is the unique identifier for the sales order.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            },
-            {
-              "name": "salesOrderId",
-              "description": "The unique identifier of the sales order."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}",
-        "definition": {
-          "entityName": "SalesOrderItem",
-          "schema": {
-            "$ref": "#/backend/entities/SalesOrderItem"
-          },
-          "description": "Stores sales order item information for a specific sales order. `customerId` is the customer's ID, `salesOrderId` is the sales order's ID, and `salesOrderItemId` is the unique identifier for the sales order item.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            },
-            {
-              "name": "salesOrderId",
-              "description": "The unique identifier of the sales order."
-            },
-            {
-              "name": "salesOrderItemId",
-              "description": "The unique identifier of the sales order item."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to support the VentaPro application, focusing on product catalog, sales order creation, inventory management, customer management, and sales reporting. The structure prioritizes authorization independence and QAPs by denormalizing authorization context where necessary and segregating data based on access needs.\n\n*   **Products:** Products are stored in a top-level `products` collection. This allows easy listing and searching of all products.\n*   **Customers:** Customers are stored in a top-level `customers` collection, enabling easy access and management of customer data.\n*   **Sales Orders:** Sales orders are stored as subcollections under each customer document (`/customers/{customerId}/sales_orders/{salesOrderId}`). This reflects the 1:N relationship between customers and their orders and provides path-based ownership for secure access.\n*   **Sales Order Items:** Sales order items are stored as subcollections under each sales order document (`/customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}`). This maintains the hierarchical relationship and ensures data integrity.\n\nThis structure ensures authorization independence by using path-based ownership for sales orders and sales order items. Security rules can be written to allow only the customer (identified by `customerId`) to access their sales orders. The top-level `products` and `customers` collections allow for efficient listing and searching operations, supporting QAPs."
+      "description": "Stores all customer information."
+    }
   }
 }

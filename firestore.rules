@@ -1,37 +1,32 @@
 /**
  * @file Firestore Security Rules for VentaPro Application
- * @version Prototyping
+ * @description This ruleset enforces a strict ownership model for customer data and their associated sales orders and sales order items. Products are publicly readable but not writable.
  *
- * @description This ruleset enforces a strict user-ownership model for customer data and their associated sales orders.
- *  Product data is publicly readable.
- *
- * @dataStructure
+ * Data Structure:
  * - /products/{productId}: Publicly readable product catalog.
- * - /customers/{customerId}: Customer profiles, accessible only by the customer themselves.
- * - /customers/{customerId}/sales_orders/{salesOrderId}: Sales orders belonging to a specific customer, accessible only by that customer.
- * - /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}: Items within a sales order, accessible only by the owning customer.
+ * - /customers/{customerId}: Customer profiles, only accessible by the customer themselves.
+ * - /customers/{customerId}/sales_orders/{salesOrderId}: Sales orders belonging to a specific customer.
+ * - /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}: Items within a sales order.
  *
- * @keySecurityDecisions
- * - Products are publicly readable to allow for easy catalog browsing.
+ * Key Security Decisions:
+ * - Products are publicly readable to allow for easy catalog access.  Writes are disabled to protect product data.
  * - Customers can only access their own data and sales orders.
- * - No listing of customers is allowed to prevent data leakage.
+ * - No listing of all customers is allowed to prevent unauthorized data access.
+ * - Relational integrity is enforced to ensure that sales orders and sales order items are associated with the correct customer.
  *
- * @denormalizationForAuthorization
- * - Sales orders are nested under customers to enforce ownership via path-based rules.
- *
- * @structuralSegregation
- * - Public product data is stored in a top-level collection, separate from private customer data.
+ * Denormalization for Authorization:
+ * - The customerId is present in both the sales_orders and sales_order_items subcollections, allowing for path-based authorization.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows anyone to read product information, but restricts creation, updates, and deletion to be implemented later by admins.
+     * @description Allows anyone to read product information, but restricts creation, updates, and deletion.
      * @path /products/{productId}
      * @allow (get, list): if true
-     * @deny (create, update, delete): Always, as these operations are not permitted in the current configuration.
-     * @principle Public read access with restricted writes.
+     * @deny (create, update, delete): if false
+     * @principle Public read, no writes.
      */
     match /products/{productId} {
       allow get, list: if true;
@@ -39,50 +34,71 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows a customer to read, update, and delete their own profile. Only the customer can create their profile.
+     * @description Allows a customer to read and write their own customer profile.
      * @path /customers/{customerId}
-     * @allow (get, update, delete): if isSignedIn() && isOwner(customerId);
-     * @allow (create): if isSignedIn() && isOwner(customerId);
-     * @deny (get, update, delete): if isSignedIn() && !isOwner(customerId);
-     * @deny (create): if !isSignedIn() || request.auth.uid != customerId;
-     * @deny (list): Always, as customer listing is not permitted.
-     * @principle Enforces document ownership for customer profiles.
+     * @allow (get): if isSignedIn() && isOwner(customerId)
+     * @allow (create): if isSignedIn() && isOwner(customerId)
+     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
+     * @deny (get): if !isSignedIn() || !isOwner(customerId)
+     * @deny (create): if !isSignedIn() || !isOwner(customerId)
+     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
+     * @principle Enforces document ownership for all operations.
      */
     match /customers/{customerId} {
-      allow get, update, delete: if isSignedIn() && isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
+      allow get: if isSignedIn() && isOwner(customerId);
       allow list: if false;
+      allow create: if isSignedIn() && isOwner(customerId);
+      allow update: if isSignedIn() && isExistingOwner(customerId);
+      allow delete: if isSignedIn() && isExistingOwner(customerId);
     }
 
     /**
-     * @description Allows a customer to manage their own sales orders. Only the customer can create, read, update, and delete orders under their ID.
+     * @description Allows a customer to manage their own sales orders.
      * @path /customers/{customerId}/sales_orders/{salesOrderId}
-     * @allow (get, list, create, update, delete): if isSignedIn() && isOwner(customerId);
-     * @deny (get, list, create, update, delete): if !isSignedIn() || !isOwner(customerId);
-     * @principle Enforces document ownership for sales orders.
+     * @allow (get, list): if isSignedIn() && isOwner(customerId)
+     * @allow (create): if isSignedIn() && isOwner(customerId)
+     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
+     * @deny (get, list): if !isSignedIn() || !isOwner(customerId)
+     * @deny (create): if !isSignedIn() || !isOwner(customerId)
+     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
+     * @principle Enforces document ownership for all operations.
      */
     match /customers/{customerId}/sales_orders/{salesOrderId} {
-      allow get, list, create, update, delete: if isSignedIn() && isOwner(customerId);
+      allow get, list: if isSignedIn() && isOwner(customerId);
+      allow create: if isSignedIn() && isOwner(customerId);
+      allow update: if isSignedIn() && isExistingOwner(customerId);
+      allow delete: if isSignedIn() && isExistingOwner(customerId);
     }
 
     /**
-     * @description Allows a customer to manage their own sales order items. Only the customer can create, read, update, and delete items under their sales order ID.
+     * @description Allows a customer to manage sales order items within their sales orders.
      * @path /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}
-     * @allow (get, list, create, update, delete): if isSignedIn() && isOwner(customerId);
-     * @deny (get, list, create, update, delete): if !isSignedIn() || !isOwner(customerId);
-     * @principle Enforces document ownership for sales order items.
+     * @allow (get, list): if isSignedIn() && isOwner(customerId)
+     * @allow (create): if isSignedIn() && isOwner(customerId)
+     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
+     * @deny (get, list): if !isSignedIn() || !isOwner(customerId)
+     * @deny (create): if !isSignedIn() || !isOwner(customerId)
+     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
+     * @principle Enforces document ownership for all operations.
      */
     match /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId} {
-      allow get, list, create, update, delete: if isSignedIn() && isOwner(customerId);
+      allow get, list: if isSignedIn() && isOwner(customerId);
+      allow create: if isSignedIn() && isOwner(customerId);
+      allow update: if isSignedIn() && isExistingOwner(customerId);
+      allow delete: if isSignedIn() && isExistingOwner(customerId);
     }
+  }
 
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }
