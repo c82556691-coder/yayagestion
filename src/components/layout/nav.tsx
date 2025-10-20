@@ -13,6 +13,7 @@ import {
   Package,
   Users,
   FileText,
+  Database,
 } from 'lucide-react';
 import { Rocket } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/products', label: 'Products', icon: Package },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/reports', label: 'Reports', icon: FileText },
+  { href: '/database', label: 'Base de Datos', icon: Database },
 ];
 
 export function Nav() {
