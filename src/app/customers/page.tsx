@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { customers as initialCustomers, PlaceHolderImages } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,26 +32,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-type CustomerWithStats = Customer & {
-  totalOrders: number;
-  totalSpent: string;
-};
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
+  const firestore = useFirestore();
+  const customersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'customers') : null),
+    [firestore]
+  );
+
+  const { data: customers = [], isLoading } = useCollection<Customer>(customersCollection);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '' });
-
-  useEffect(() => {
-    // This runs only on the client, avoiding hydration mismatches.
-    const customersWithStats = initialCustomers.map((customer) => ({
-      ...customer,
-      totalOrders: Math.floor(Math.random() * 25) + 1,
-      totalSpent: (Math.random() * 5000 + 100).toFixed(2),
-    }));
-    setCustomers(customersWithStats);
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -60,15 +56,13 @@ export default function CustomersPage() {
 
   const handleAddCustomer = (e: React.FormEvent) => {
     e.preventDefault();
-    const newCustomerData: CustomerWithStats = {
-      id: `cust${customers.length + 1}`,
-      name: newCustomer.name,
-      email: newCustomer.email,
-      imageId: `customer${(customers.length % 5) + 1}`,
-      totalOrders: 0,
-      totalSpent: '0.00',
-    };
-    setCustomers((prev) => [...prev, newCustomerData]);
+    if (!customersCollection) return;
+    
+    addDocumentNonBlocking(customersCollection, {
+        ...newCustomer,
+        imageId: `customer${(customers.length % 5) + 1}`,
+    });
+
     setNewCustomer({ name: '', email: '' });
     setIsDialogOpen(false);
   };
@@ -145,25 +139,44 @@ export default function CustomersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {customers.map((customer) => {
-                const image = PlaceHolderImages.find(p => p.id === customer.imageId);
-                return (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={image?.imageUrl} alt={customer.name} data-ai-hint={image?.imageHint} />
-                          <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{customer.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{customer.email}</TableCell>
-                    <TableCell>{customer.totalOrders}</TableCell>
-                    <TableCell className="text-right">${customer.totalSpent}</TableCell>
-                  </TableRow>
-                );
-              })}
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <Skeleton className="h-5 w-32" />
+                            </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : (
+                customers.map((customer) => {
+                  const image = PlaceHolderImages.find(p => p.id === customer.imageId);
+                  // Mock data for display until orders are implemented
+                  const totalOrders = Math.floor(Math.random() * 25) + 1;
+                  const totalSpent = (Math.random() * 5000 + 100).toFixed(2);
+                  return (
+                    <TableRow key={customer.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={image?.imageUrl} alt={customer.name} data-ai-hint={image?.imageHint} />
+                            <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{customer.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{totalOrders}</TableCell>
+                      <TableCell className="text-right">${totalSpent}</TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -7,13 +7,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { products, customers } from '@/lib/data';
 import type { Product, OrderItem, Customer } from '@/lib/definitions';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function NewOrderPage() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const productsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'products') : null),
+    [firestore]
+  );
+  const customersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'customers') : null),
+    [firestore]
+  );
+
+  const { data: products = [] } = useCollection<Product>(productsCollection);
+  const { data: customers = [] } = useCollection<Customer>(customersCollection);
+
   const [customer, setCustomer] = useState<Customer | undefined>();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
@@ -38,7 +53,7 @@ export default function NewOrderPage() {
           item.productId === selectedProduct.id ? { ...item, quantity: item.quantity + quantity } : item
         ));
       } else {
-        setOrderItems([...orderItems, { productId: selectedProduct.id, quantity, price: selectedProduct.price }]);
+        setOrderItems([...orderItems, { productId: selectedProduct.id!, quantity, price: selectedProduct.price }]);
       }
       setSelectedProduct(undefined);
       setQuantity(1);
@@ -68,6 +83,7 @@ export default function NewOrderPage() {
         });
         return;
     }
+    // TODO: Save order to Firestore
     console.log({
       customer,
       items: orderItems,
@@ -100,7 +116,7 @@ export default function NewOrderPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {customers.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
+                        <SelectItem key={c.id} value={c.id!}>
                           {c.name}
                         </SelectItem>
                       ))}
@@ -125,7 +141,7 @@ export default function NewOrderPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {products.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
+                        <SelectItem key={p.id} value={p.id!}>
                           {p.name}
                         </SelectItem>
                       ))}
