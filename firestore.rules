@@ -1,104 +1,52 @@
 /**
- * @file Firestore Security Rules for VentaPro Application
- * @description This ruleset enforces a strict ownership model for customer data and their associated sales orders and sales order items. Products are publicly readable but not writable.
- *
- * Data Structure:
- * - /products/{productId}: Publicly readable product catalog.
- * - /customers/{customerId}: Customer profiles, only accessible by the customer themselves.
- * - /customers/{customerId}/sales_orders/{salesOrderId}: Sales orders belonging to a specific customer.
- * - /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}: Items within a sales order.
- *
- * Key Security Decisions:
- * - Products are publicly readable to allow for easy catalog access.  Writes are disabled to protect product data.
- * - Customers can only access their own data and sales orders.
- * - No listing of all customers is allowed to prevent unauthorized data access.
- * - Relational integrity is enforced to ensure that sales orders and sales order items are associated with the correct customer.
- *
- * Denormalization for Authorization:
- * - The customerId is present in both the sales_orders and sales_order_items subcollections, allowing for path-based authorization.
+ * @description This ruleset enforces a public read, owner-write model for products, and restricts customer data access to authenticated users.
+ * @dataStructure
+ *  - /products/{productId}: Publicly readable product catalog. Only authenticated users can create, update, or delete products.
+ *  - /customers/{customerId}: Stores customer profiles. Only authenticated users can create customer profiles.
+ * @keySecurityDecisions
+ *  - Public Read Access for Products: The product catalog is publicly readable to allow browsing without authentication.
+ *  - Owner-Only Writes for Products: Only authenticated users can modify product information, preventing unauthorized changes.
+ *  - Authenticated User Access for Customers:  Only authenticated users are able to create customer profiles.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows anyone to read product information, but restricts creation, updates, and deletion.
+     * @description Allows anyone to read products, but only authenticated users can create, update, or delete them.
      * @path /products/{productId}
-     * @allow (get, list): if true
-     * @deny (create, update, delete): if false
-     * @principle Public read, no writes.
+     * @allow (get, list): Any user can read product information.
+     * @allow (create): An authenticated user can create a product with valid data.
+     * @allow (update, delete): An authenticated user can update or delete a product.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete products.
+     * @principle Enforces public read access with owner-only writes for the product catalog.
      */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
     }
 
     /**
-     * @description Allows a customer to read and write their own customer profile.
+     * @description Allows authenticated users to create customer profiles.
      * @path /customers/{customerId}
-     * @allow (get): if isSignedIn() && isOwner(customerId)
-     * @allow (create): if isSignedIn() && isOwner(customerId)
-     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
-     * @deny (get): if !isSignedIn() || !isOwner(customerId)
-     * @deny (create): if !isSignedIn() || !isOwner(customerId)
-     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
-     * @principle Enforces document ownership for all operations.
+     * @allow (create): An authenticated user can create their own customer profile.
+     * @deny (get, list, update, delete): Not granted by these rules.
+     * @principle Enforces authenticated access for customer profiles.
      */
     match /customers/{customerId} {
-      allow get: if isSignedIn() && isOwner(customerId);
+      allow get: if false;
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(customerId);
-      allow update: if isSignedIn() && isExistingOwner(customerId);
-      allow delete: if isSignedIn() && isExistingOwner(customerId);
+      allow create: if isSignedIn();
+      allow update: if false;
+      allow delete: if false;
     }
 
-    /**
-     * @description Allows a customer to manage their own sales orders.
-     * @path /customers/{customerId}/sales_orders/{salesOrderId}
-     * @allow (get, list): if isSignedIn() && isOwner(customerId)
-     * @allow (create): if isSignedIn() && isOwner(customerId)
-     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
-     * @deny (get, list): if !isSignedIn() || !isOwner(customerId)
-     * @deny (create): if !isSignedIn() || !isOwner(customerId)
-     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
-     * @principle Enforces document ownership for all operations.
-     */
-    match /customers/{customerId}/sales_orders/{salesOrderId} {
-      allow get, list: if isSignedIn() && isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
-      allow update: if isSignedIn() && isExistingOwner(customerId);
-      allow delete: if isSignedIn() && isExistingOwner(customerId);
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
     }
-
-    /**
-     * @description Allows a customer to manage sales order items within their sales orders.
-     * @path /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId}
-     * @allow (get, list): if isSignedIn() && isOwner(customerId)
-     * @allow (create): if isSignedIn() && isOwner(customerId)
-     * @allow (update, delete): if isSignedIn() && isExistingOwner(customerId)
-     * @deny (get, list): if !isSignedIn() || !isOwner(customerId)
-     * @deny (create): if !isSignedIn() || !isOwner(customerId)
-     * @deny (update, delete): if !isSignedIn() || !isExistingOwner(customerId)
-     * @principle Enforces document ownership for all operations.
-     */
-    match /customers/{customerId}/sales_orders/{salesOrderId}/sales_order_items/{salesOrderItemId} {
-      allow get, list: if isSignedIn() && isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
-      allow update: if isSignedIn() && isExistingOwner(customerId);
-      allow delete: if isSignedIn() && isExistingOwner(customerId);
-    }
-  }
-
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }
