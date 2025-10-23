@@ -40,7 +40,7 @@ export default function CalculatorPage() {
 
   useEffect(() => {
     const calculatedTotal = calculationItems.reduce((sum, item) => {
-      const sold = item.finalStock - item.initialStock;
+      const sold = item.initialStock - item.finalStock;
       const amount = sold > 0 ? sold * item.price : 0;
       return sum + amount;
     }, 0);
@@ -67,9 +67,10 @@ export default function CalculatorPage() {
     }
   };
 
-  const handleItemChange = (productId: string, field: keyof CalculationItem, value: number) => {
+  const handleItemChange = (productId: string, field: keyof CalculationItem, value: string) => {
+    const numericValue = Number(value) < 0 ? 0 : Number(value);
     setCalculationItems(calculationItems.map(item => 
-      item.productId === productId ? { ...item, [field]: value < 0 ? 0 : value } : item
+      item.productId === productId ? { ...item, [field]: numericValue } : item
     ));
   };
 
@@ -144,7 +145,7 @@ export default function CalculatorPage() {
                         </TableHeader>
                         <TableBody>
                         {calculationItems.map(item => {
-                            const sold = item.finalStock - item.initialStock;
+                            const sold = item.initialStock - item.finalStock;
                             const amount = sold > 0 ? sold * item.price : 0;
                             return (
                             <TableRow key={item.productId}>
@@ -153,7 +154,7 @@ export default function CalculatorPage() {
                                     <Input 
                                         type="number" 
                                         value={item.initialStock} 
-                                        onChange={(e) => handleItemChange(item.productId, 'initialStock', Number(e.target.value))}
+                                        onChange={(e) => handleItemChange(item.productId, 'initialStock', e.target.value)}
                                         className="w-24"
                                         min="0"
                                     />
@@ -162,7 +163,7 @@ export default function CalculatorPage() {
                                     <Input 
                                         type="number" 
                                         value={item.finalStock} 
-                                        onChange={(e) => handleItemChange(item.productId, 'finalStock', Number(e.target.value))}
+                                        onChange={(e) => handleItemChange(item.productId, 'finalStock', e.target.value)}
                                         className="w-24"
                                         min="0"
                                     />
@@ -171,7 +172,7 @@ export default function CalculatorPage() {
                                     <Input 
                                         type="number" 
                                         value={item.price} 
-                                        onChange={(e) => handleItemChange(item.productId, 'price', Number(e.target.value))}
+                                        onChange={(e) => handleItemChange(item.productId, 'price', e.target.value)}
                                         step="0.01"
                                         className="w-28"
                                         min="0"
