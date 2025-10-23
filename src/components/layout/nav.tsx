@@ -9,14 +9,12 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Calculator,
-  QrCode,
   Package,
   Database,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Calculadora', icon: Calculator },
-  { href: '/qr-payment', label: 'Pago con QR', icon: QrCode },
   { href: '/products', label: 'Productos', icon: Package },
   { href: '/database', label: 'Base de Datos', icon: Database },
 ];

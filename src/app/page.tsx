@@ -12,7 +12,6 @@ import { PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import Link from 'next/link';
 
 interface CalculationItem {
   productId: string;
@@ -188,11 +187,11 @@ export default function CalculatorPage() {
                     <span>${total.toFixed(2)}</span>
                   </div>
                 </div>
-                <Button asChild className="w-full mt-6" disabled={total <= 0}>
-                  <Link href={`/qr-payment?amount=${total.toFixed(2)}`}>
-                      Proceder al Pago
-                  </Link>
-                </Button>
+                 {calculationItems.length > 0 && (
+                    <Button onClick={handleClearAll} variant="destructive" className="w-full mt-6">
+                        Limpiar
+                    </Button>
+                )}
               </>
             ) : (
               <p className="text-muted-foreground text-center">No hay productos en la calculadora.</p>
