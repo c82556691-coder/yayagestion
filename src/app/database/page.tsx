@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,8 +23,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { orders as initialOrders, PlaceHolderImages } from '@/lib/data';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlaceHolderImages } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -44,15 +44,6 @@ import {
 } from '@/firebase/non-blocking-updates';
 import { collection, doc } from 'firebase/firestore';
 
-const statusVariant: {
-  [key: string]: 'default' | 'secondary' | 'destructive' | 'outline';
-} = {
-  Pending: 'outline',
-  Shipped: 'secondary',
-  Delivered: 'default',
-  Cancelled: 'destructive',
-};
-
 export default function DatabasePage() {
   const firestore = useFirestore();
   const productsCollection = useMemoFirebase(
@@ -63,8 +54,6 @@ export default function DatabasePage() {
   const { data: productsData, isLoading: productsLoading } =
     useCollection<Product>(productsCollection);
   const products = productsData || [];
-
-  const [orders, setOrders] = useState(initialOrders);
 
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
@@ -99,9 +88,8 @@ export default function DatabasePage() {
         Gestión de Base de Datos
       </h2>
       <Tabs defaultValue="products">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="products">Productos</TabsTrigger>
-          <TabsTrigger value="orders">Pedidos</TabsTrigger>
         </TabsList>
         <TabsContent value="products">
           <Card>
@@ -128,7 +116,6 @@ export default function DatabasePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Producto</TableHead>
-                    <TableHead>Stock</TableHead>
                     <TableHead className="text-right">Precio</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -136,7 +123,7 @@ export default function DatabasePage() {
                 <TableBody>
                   {productsLoading ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center">
+                      <TableCell colSpan={3} className="text-center">
                         Cargando productos...
                       </TableCell>
                     </TableRow>
@@ -163,13 +150,9 @@ export default function DatabasePage() {
                                 <span className="font-medium">
                                   {product.name}
                                 </span>
-                                <p className="text-sm text-muted-foreground">
-                                  {product.description}
-                                </p>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{product.stock}</TableCell>
                           <TableCell className="text-right">
                             ${product.price.toFixed(2)}
                           </TableCell>
@@ -196,46 +179,6 @@ export default function DatabasePage() {
                       );
                     })
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pedidos</CardTitle>
-              <CardDescription>
-                Una lista de todos los pedidos de ventas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID Pedido</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customer.name}</TableCell>
-                      <TableCell>{order.orderDate}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant[order.status]}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ${order.total.toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
                 </TableBody>
               </Table>
             </CardContent>
