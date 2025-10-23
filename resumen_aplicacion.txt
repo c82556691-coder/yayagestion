@@ -1,0 +1,39 @@
+Resumen de la Aplicación "VentaPro"
+
+Esta aplicación es un sistema de gestión de ventas simplificado, diseñado para calcular las ventas de productos y gestionar un catálogo básico.
+
+Funcionalidades Principales:
+
+1. Calculadora de Ventas (Página Principal):
+   - Permite seleccionar productos existentes desde la base de datos para añadirlos a una tabla de cálculo.
+   - Para cada producto en la tabla, el usuario puede introducir:
+     - Cantidad de "Inicio" (stock inicial).
+     - Cantidad de "Final" (stock final).
+     - "Precio" del producto (editable en el momento).
+   - La aplicación calcula automáticamente el "Importe" para cada producto usando la fórmula: (Inicio - Final) * Precio.
+   - Muestra un "Total" general que es la suma de todos los importes.
+   - Los cálculos se actualizan en tiempo real a medida que se modifican los valores.
+   - Incluye un botón para "Limpiar" la calculadora y empezar de nuevo.
+
+2. Base de Datos (Gestión de Productos):
+   - Permite ver, añadir, editar y eliminar productos del catálogo.
+   - La tabla muestra el "Nombre del Producto" y su "Precio".
+   - Al añadir o editar un producto, solo se requiere el nombre y el precio, simplificando la gestión.
+   - Todos los datos de los productos se guardan en la base de datos de Firebase (Firestore).
+
+3. Productos (Vista de Catálogo):
+   - Muestra todos los productos del inventario en un formato de tarjetas visuales.
+   - Cada tarjeta de producto incluye su imagen, nombre, descripción, precio y el stock disponible.
+
+4. Informes con IA:
+   - Una herramienta que utiliza inteligencia artificial (Genkit) para analizar datos de ventas.
+   - El usuario puede pegar datos de ventas en un campo de texto, seleccionar la longitud del resumen (corto, mediano, largo) y generar un análisis estratégico.
+
+Navegación:
+- Un menú lateral permite un acceso rápido y sencillo a las secciones: "Calculadora", "Productos" y "Base de Datos".
+
+Tecnología y Backend:
+- La aplicación está construida con Next.js y React.
+- Utiliza Firebase Firestore como base de datos para almacenar la información de los productos.
+- Las reglas de seguridad de Firestore están configuradas para permitir la lectura y escritura de productos durante el desarrollo.
+- Integra Genkit para las funcionalidades de inteligencia artificial en la sección de informes.
