@@ -19,8 +19,7 @@
         },
         "imageId": {
           "type": "string",
-          "description": "ID of the product image.",
-          "format": "uri"
+          "description": "ID of the product image."
         },
         "stock": {
           "type": "number",
@@ -29,33 +28,7 @@
       },
       "required": [
         "name",
-        "price",
-        "imageId"
-      ]
-    },
-    "Customer": {
-      "title": "Customer",
-      "type": "object",
-      "description": "Represents a customer.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Full name of the customer."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the customer.",
-          "format": "email"
-        },
-        "imageId": {
-          "type": "string",
-          "description": "ID for the customer's avatar image."
-        }
-      },
-      "required": [
-        "name",
-        "email",
-        "imageId"
+        "price"
       ]
     }
   },
@@ -71,12 +44,6 @@
         "$ref": "#/entities/Product"
       },
       "description": "Stores all product information for the catalog."
-    },
-    "/customers/{customerId}": {
-      "schema": {
-        "$ref": "#/entities/Customer"
-      },
-      "description": "Stores all customer information."
     }
   }
 }
