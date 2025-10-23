@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -18,16 +19,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 function QRCodeComponent() {
   const searchParams = useSearchParams();
   const amount = searchParams.get('amount') || '0.00';
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  const qrData = JSON.stringify({
-    amount: parseFloat(amount),
-    currency: 'USD',
-    timestamp: new Date().toISOString(),
-  });
+  useEffect(() => {
+    const qrData = JSON.stringify({
+      amount: parseFloat(amount),
+      currency: 'USD',
+      timestamp: new Date().toISOString(),
+    });
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    qrData
-  )}`;
+    const url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      qrData
+    )}`;
+    setQrCodeUrl(url);
+  }, [amount]);
+
 
   return (
     <Card className="max-w-md mx-auto">
@@ -39,13 +45,17 @@ function QRCodeComponent() {
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center gap-4">
         <div className="p-4 bg-white rounded-lg">
-          <Image
-            src={qrCodeUrl}
-            alt="Código QR de pago"
-            width={300}
-            height={300}
-            priority
-          />
+          {qrCodeUrl ? (
+            <Image
+              src={qrCodeUrl}
+              alt="Código QR de pago"
+              width={300}
+              height={300}
+              priority
+            />
+          ) : (
+            <Skeleton className="h-[300px] w-[300px] rounded-lg" />
+          )}
         </div>
         <p className="text-4xl font-bold">${amount}</p>
       </CardContent>
