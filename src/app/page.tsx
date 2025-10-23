@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,8 +34,9 @@ export default function CalculatorPage() {
   const products = productsData || [];
 
   const [calculationItems, setCalculationItems] = useState<CalculationItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [total, setTotal] = useState(0);
+  const [selectedProductId, setSelectedProductId] = useState('');
+
 
   useEffect(() => {
     const calculatedTotal = calculationItems.reduce((sum, item) => {
@@ -69,7 +69,7 @@ export default function CalculatorPage() {
 
   const handleItemChange = (productId: string, field: keyof CalculationItem, value: number) => {
     setCalculationItems(calculationItems.map(item => 
-      item.productId === productId ? { ...item, [field]: value } : item
+      item.productId === productId ? { ...item, [field]: value < 0 ? 0 : value } : item
     ));
   };
 
@@ -155,6 +155,7 @@ export default function CalculatorPage() {
                                         value={item.initialStock} 
                                         onChange={(e) => handleItemChange(item.productId, 'initialStock', Number(e.target.value))}
                                         className="w-24"
+                                        min="0"
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -163,6 +164,7 @@ export default function CalculatorPage() {
                                         value={item.finalStock} 
                                         onChange={(e) => handleItemChange(item.productId, 'finalStock', Number(e.target.value))}
                                         className="w-24"
+                                        min="0"
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -172,6 +174,7 @@ export default function CalculatorPage() {
                                         onChange={(e) => handleItemChange(item.productId, 'price', Number(e.target.value))}
                                         step="0.01"
                                         className="w-28"
+                                        min="0"
                                     />
                                 </TableCell>
                                 <TableCell className="text-right font-medium">${amount.toFixed(2)}</TableCell>
@@ -209,4 +212,3 @@ export default function CalculatorPage() {
     </div>
   );
 }
-
