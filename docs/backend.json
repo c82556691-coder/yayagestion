@@ -29,10 +29,8 @@
       },
       "required": [
         "name",
-        "description",
         "price",
-        "imageId",
-        "stock"
+        "imageId"
       ]
     },
     "Customer": {

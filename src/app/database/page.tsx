@@ -24,7 +24,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { PlaceHolderImages } from '@/lib/data';
-import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
@@ -68,6 +67,8 @@ export default function DatabasePage() {
     } else {
       addDocumentNonBlocking(productsCollection, {
         ...product,
+        description: '',
+        stock: 0,
         imageId: `prod${(products.length % 8) + 1}`,
       });
     }
