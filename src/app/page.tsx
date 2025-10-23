@@ -35,6 +35,7 @@ export default function CalculatorPage() {
 
   const [calculationItems, setCalculationItems] = useState<CalculationItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [total, setTotal] = useState(0);
   
   const handleAddProduct = () => {
     const product = products.find(p => p.id === selectedProductId);
@@ -68,17 +69,25 @@ export default function CalculatorPage() {
 
   const handleClearAll = () => {
     setCalculationItems([]);
+    setTotal(0);
     toast({
         title: 'Calculadora Limpiada',
         description: `Se han eliminado todos los productos de la lista.`,
     });
   }
   
-  const total = calculationItems.reduce((sum, item) => {
-    const sold = item.finalStock - item.initialStock;
-    const amount = sold > 0 ? sold * item.price : 0;
-    return sum + amount;
-  }, 0);
+  const handleCalculateTotal = () => {
+    const calculatedTotal = calculationItems.reduce((sum, item) => {
+        const sold = item.finalStock - item.initialStock;
+        const amount = sold > 0 ? sold * item.price : 0;
+        return sum + amount;
+      }, 0);
+    setTotal(calculatedTotal);
+    toast({
+        title: 'Cálculo Realizado',
+        description: `El total de la venta es $${calculatedTotal.toFixed(2)}.`,
+    });
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -188,9 +197,14 @@ export default function CalculatorPage() {
                   </div>
                 </div>
                  {calculationItems.length > 0 && (
-                    <Button onClick={handleClearAll} variant="destructive" className="w-full mt-6">
-                        Limpiar
-                    </Button>
+                    <div className="flex gap-4 mt-6">
+                        <Button onClick={handleCalculateTotal} className="w-full">
+                            Calcular
+                        </Button>
+                        <Button onClick={handleClearAll} variant="destructive" className="w-full">
+                            Limpiar
+                        </Button>
+                    </div>
                 )}
               </>
             ) : (
