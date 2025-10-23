@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,15 @@ export default function CalculatorPage() {
   const [calculationItems, setCalculationItems] = useState<CalculationItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    const calculatedTotal = calculationItems.reduce((sum, item) => {
+      const sold = item.finalStock - item.initialStock;
+      const amount = sold > 0 ? sold * item.price : 0;
+      return sum + amount;
+    }, 0);
+    setTotal(calculatedTotal);
+  }, [calculationItems]);
   
   const handleAddProduct = () => {
     const product = products.find(p => p.id === selectedProductId);
@@ -69,23 +79,9 @@ export default function CalculatorPage() {
 
   const handleClearAll = () => {
     setCalculationItems([]);
-    setTotal(0);
     toast({
         title: 'Calculadora Limpiada',
         description: `Se han eliminado todos los productos de la lista.`,
-    });
-  }
-  
-  const handleCalculateTotal = () => {
-    const calculatedTotal = calculationItems.reduce((sum, item) => {
-        const sold = item.finalStock - item.initialStock;
-        const amount = sold > 0 ? sold * item.price : 0;
-        return sum + amount;
-      }, 0);
-    setTotal(calculatedTotal);
-    toast({
-        title: 'Cálculo Realizado',
-        description: `El total de la venta es $${calculatedTotal.toFixed(2)}.`,
     });
   }
 
@@ -198,9 +194,6 @@ export default function CalculatorPage() {
                 </div>
                  {calculationItems.length > 0 && (
                     <div className="flex gap-4 mt-6">
-                        <Button onClick={handleCalculateTotal} className="w-full">
-                            Calcular
-                        </Button>
                         <Button onClick={handleClearAll} variant="destructive" className="w-full">
                             Limpiar
                         </Button>
@@ -216,3 +209,4 @@ export default function CalculatorPage() {
     </div>
   );
 }
+
