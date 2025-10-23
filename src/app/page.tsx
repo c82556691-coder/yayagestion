@@ -56,7 +56,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${salesMetrics.totalRevenue.toLocaleString()}
+              ${salesMetrics.totalRevenue.toLocaleString('en-US')}
             </div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
@@ -70,7 +70,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              +{salesMetrics.totalSales.toLocaleString()}
+              +{salesMetrics.totalSales.toLocaleString('en-US')}
             </div>
             <p className="text-xs text-muted-foreground">
               +180.1% from last month
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="ml-auto font-medium">
-                      +${sale.amount.toLocaleString()}
+                      +${sale.amount.toLocaleString('en-US')}
                     </div>
                   </div>
                 );
