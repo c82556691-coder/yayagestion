@@ -8,21 +8,16 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard,
-  ShoppingCart,
+  Calculator,
+  QrCode,
   Package,
-  Users,
-  FileText,
   Database,
 } from 'lucide-react';
-import { Rocket } from 'lucide-react';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/products', label: 'Products', icon: Package },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/reports', label: 'Reports', icon: FileText },
+  { href: '/', label: 'Calculadora', icon: Calculator },
+  { href: '/qr-payment', label: 'Pago con QR', icon: QrCode },
+  { href: '/products', label: 'Productos', icon: Package },
   { href: '/database', label: 'Base de Datos', icon: Database },
 ];
 

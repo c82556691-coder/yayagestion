@@ -1,194 +1,171 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  salesMetrics,
-  salesByProduct,
-  salesTrend,
-  recentSales,
-  PlaceHolderImages,
-} from '@/lib/data';
-import {
-  DollarSign,
-  ShoppingCart,
-  Users,
-  BarChart,
-  ArrowUpRight,
-} from 'lucide-react';
-import {
-  Bar,
-  BarChart as RechartsBarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Line,
-  LineChart,
-  Tooltip,
-} from 'recharts';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Product, OrderItem } from '@/lib/definitions';
+import { PlusCircle, Trash2, XCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import Link from 'next/link';
 
-export default function DashboardPage() {
-  const chartConfig = {
-    sales: {
-      label: 'Sales',
-      color: 'hsl(var(--primary))',
-    },
-    revenue: {
-      label: 'Revenue',
-      color: 'hsl(var(--accent))',
-    },
+export default function CalculatorPage() {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const productsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'products') : null),
+    [firestore]
+  );
+
+  const { data: productsData } = useCollection<Product>(productsCollection);
+  const products = productsData || [];
+
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+  const [quantity, setQuantity] = useState(1);
+
+  const handleAddProduct = () => {
+    if (selectedProduct && quantity > 0) {
+      const existingItem = orderItems.find(item => item.productId === selectedProduct.id);
+      const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+      
+      if (quantity + currentQuantityInCart > selectedProduct.stock) {
+        toast({
+            title: "Inventario Insuficiente",
+            description: `Solo hay ${selectedProduct.stock} unidades de ${selectedProduct.name} disponibles. Ya tienes ${currentQuantityInCart} en tu carrito.`,
+            variant: "destructive",
+        });
+        return;
+      }
+
+      if (existingItem) {
+        setOrderItems(orderItems.map(item =>
+          item.productId === selectedProduct.id ? { ...item, quantity: item.quantity + quantity } : item
+        ));
+      } else {
+        setOrderItems([...orderItems, { productId: selectedProduct.id!, quantity, price: selectedProduct.price }]);
+      }
+      setSelectedProduct(undefined);
+      setQuantity(1);
+    }
   };
 
+  const handleRemoveItem = (productId: string) => {
+    setOrderItems(orderItems.filter(item => item.productId !== productId));
+  };
+
+  const handleClearAll = () => {
+    setOrderItems([]);
+    toast({
+        title: 'Calculadora Limpiada',
+        description: `Se han eliminado todos los productos de la lista.`,
+    });
+  }
+  
+  const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${salesMetrics.totalRevenue.toLocaleString('en-US')}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              +{salesMetrics.totalSales.toLocaleString('en-US')}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              +{salesMetrics.newCustomers}
-            </div>
-            <p className="text-xs text-muted-foreground">+19% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Top Selling Product
-            </CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Smart Watch</div>
-            <p className="text-xs text-muted-foreground">
-              {salesByProduct[0].sales} units sold
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Sales Trends</CardTitle>
-            <CardDescription>
-              Revenue generated over the last 6 months.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={salesTrend}>
-                <XAxis
-                  dataKey="date"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `$${value / 1000}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    borderColor: 'hsl(var(--border))',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: 'hsl(var(--primary))' }}
-                  activeDot={{ r: 8, style: { stroke: 'hsl(var(--primary))' } }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card className="col-span-4 lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
-            <CardDescription>
-              You made {recentSales.length} sales this month.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {recentSales.map((sale) => {
-                const customerImage = PlaceHolderImages.find(
-                  (p) => p.id === sale.customer.imageId
-                );
-                return (
-                  <div key={sale.id} className="flex items-center">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage
-                        src={customerImage?.imageUrl}
-                        alt="Avatar"
-                        data-ai-hint={customerImage?.imageHint}
-                      />
-                      <AvatarFallback>
-                        {sale.customer.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="ml-4 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {sale.customer.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {sale.customer.email}
-                      </p>
-                    </div>
-                    <div className="ml-auto font-medium">
-                      +${sale.amount.toLocaleString('en-US')}
+    <div className="p-4 md:p-8">
+      <h2 className="text-3xl font-bold tracking-tight mb-6">Calculadora de Venta</h2>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Productos</CardTitle>
+              <CardDescription>Añade productos a la venta actual.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 items-end mb-4">
+                <div className="flex-grow space-y-2">
+                  <Label htmlFor="product">Producto</Label>
+                  <Select onValueChange={(value) => setSelectedProduct(products.find(p => p.id === value))} value={selectedProduct?.id || ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un producto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map(p => (
+                        <SelectItem key={p.id} value={p.id!}>
+                          {p.name} (Stock: {p.stock})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Cantidad</Label>
+                  <Input id="quantity" type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} min="1" className="w-24" />
+                </div>
+                <Button onClick={handleAddProduct} disabled={!selectedProduct}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Añadir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Resumen de Venta</CardTitle>
+              {orderItems.length > 0 && (
+                 <Button variant="ghost" size="icon" onClick={handleClearAll} title="Limpiar todo">
+                    <XCircle className="h-5 w-5 text-destructive" />
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {orderItems.length > 0 ? (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>Cant.</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orderItems.map(item => {
+                        const product = products.find(p => p.id === item.productId);
+                        return (
+                          <TableRow key={item.productId}>
+                            <TableCell className="font-medium">{product?.name}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell className="text-right">${(item.price * item.quantity).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.productId)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <Button asChild className="w-full mt-6" disabled={total <= 0}>
+                    <Link href={`/qr-payment?amount=${total.toFixed(2)}`}>
+                        Proceder al Pago
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center">No hay productos añadidos.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
