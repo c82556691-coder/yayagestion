@@ -16,7 +16,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '../ui/skeleton';
 
 interface OrderListProps {
@@ -28,9 +29,10 @@ interface OrderListProps {
 export function OrderList({ title, orders, isLoading }: OrderListProps) {
   const firestore = useFirestore();
 
-  const handleUpdateStatus = async (orderId: string, status: Order['status']) => {
+  const handleUpdateStatus = (orderId: string, status: Order['status']) => {
+    if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
-    await updateDoc(orderRef, { status });
+    updateDocumentNonBlocking(orderRef, { status });
   };
   
   const getStatusVariant = (status: Order['status']) => {
