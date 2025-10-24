@@ -1,15 +1,51 @@
+/**
+ * @fileoverview Firestore Security Rules for Prototyping.
+ *
+ * Core Philosophy:
+ * This ruleset is in prototyping mode. It prioritizes developer velocity with flexible data shapes.
+ * Read permissions for menu items are public. All write operations must be explicitly secured and
+ * other data such as order information requires authentication.
+ *
+ * Data Structure:
+ * - /menuItems/{menuItemId}: Publicly readable collection of menu items.
+ * - /orders/{orderId}: Collection of customer orders, requiring authentication.
+ *
+ * Key Security Decisions:
+ * - Public Menu Items: The `menuItems` collection is readable by anyone to quickly onboard the application.
+ * - Authentication Required for Orders: Only authenticated users can create, update, or delete orders.
+ * - No User Listing: Listing all users is disallowed.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read and write access to products for development purposes.
-    match /products/{productId} {
-      allow read, write;
+
+    /**
+     * @description Allows anyone to read the menu items. Only authenticated users can create, update, and delete menu items.
+     * @path /menuItems/{menuItemId}
+     * @allow (get, list) Any user can read menu items.
+     * @deny (create, update, delete) No unauthenticated users can modify the menu items.
+     * @principle Allows public read access to menu items, while protecting write access.
+     */
+    match /menuItems/{menuItemId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
 
-    // Lock down customer data for now.
-    match /customers/{customerId} {
-      allow read, write: if false;
+    /**
+     * @description Allows authenticated users to manage orders.
+     * @path /orders/{orderId}
+     * @allow (create) Authenticated user can create an order.
+     * @allow (get, list, update, delete) Authenticated user can get, list, update and delete an order.
+     * @deny No unauthenticated users can access the orders collection.
+     * @principle Requires authentication for all order operations.
+     */
+    match /orders/{orderId} {
+      allow get, list, create, update, delete: if isSignedIn();
+    }
+
+    // --- Helper functions ---
+    function isSignedIn() {
+      return request.auth != null;
     }
   }
 }
