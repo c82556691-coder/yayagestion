@@ -8,15 +8,15 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import {
-  Calculator,
-  Package,
-  Database,
+  ClipboardList,
+  CookingPot,
+  BookMarked,
 } from 'lucide-react';
 
 const navItems = [
-  { href: '/', label: 'Calculadora', icon: Calculator },
-  { href: '/products', label: 'Productos', icon: Package },
-  { href: '/database', label: 'Base de Datos', icon: Database },
+  { href: '/', label: 'Pedidos', icon: ClipboardList },
+  { href: '/kitchen', label: 'Cocina', icon: CookingPot },
+  { href: '/menu', label: 'Menú', icon: BookMarked },
 ];
 
 export function Nav() {

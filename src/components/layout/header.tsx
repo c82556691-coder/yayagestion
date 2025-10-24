@@ -1,6 +1,5 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Rocket } from 'lucide-react';
+import { Utensils } from 'lucide-react';
 
 export default function Header() {
   return (
@@ -8,8 +7,8 @@ export default function Header() {
       <SidebarTrigger className="shrink-0 md:hidden" />
       <div className="w-full flex-1">
         <h1 className="text-lg font-semibold flex items-center gap-2">
-          <Rocket className="h-5 w-5 text-primary" />
-          VentaPro
+          <Utensils className="h-5 w-5 text-primary" />
+          GastroGo
         </h1>
       </div>
     </header>

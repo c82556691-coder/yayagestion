@@ -1,36 +1,34 @@
-export type Product = {
-  id?: string;
-  name: string;
-  description?: string;
-  price: number;
-  stock?: number;
-  imageId: string;
-};
+import type { Timestamp } from 'firebase/firestore';
 
-export type Customer = {
+export type MenuItem = {
   id?: string;
   name: string;
-  email: string;
-  imageId: string;
+  description: string;
+  price: number;
+  category: 'Appetizer' | 'Main Course' | 'Dessert' | 'Beverage';
+  imageUrl: string;
+  isAvailable: boolean;
 };
 
 export type OrderItem = {
-  productId: string;
+  menuItemId: string;
+  name: string;
   quantity: number;
   price: number;
 };
 
 export type Order = {
-  id: string;
-  customer: Customer;
-  orderDate: string;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
+  id?: string;
+  tableNumber: number;
   items: OrderItem[];
-  total: number;
+  status: 'Pending' | 'Preparing' | 'Ready' | 'Served' | 'Paid';
+  createdAt: Timestamp;
 };
 
-export type RecentSale = {
-  id: string;
-  customer: Customer;
-  amount: number;
+// Represents a simplified version of an order item for the form
+export type CartItem = {
+  id: string; // This will be the menuItemId
+  name: string;
+  price: number;
+  quantity: number;
 };

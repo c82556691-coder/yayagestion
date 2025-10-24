@@ -1,49 +1,99 @@
 {
   "entities": {
-    "Product": {
-      "title": "Product",
+    "MenuItem": {
+      "title": "Menu Item",
       "type": "object",
-      "description": "Represents a product in the catalog.",
+      "description": "Represents a single item on the restaurant's menu.",
       "properties": {
         "name": {
           "type": "string",
-          "description": "Name of the product."
+          "description": "The name of the menu item (e.g., 'Cheeseburger')."
         },
         "description": {
           "type": "string",
-          "description": "Detailed description of the product."
+          "description": "A brief description of the menu item."
         },
         "price": {
           "type": "number",
-          "description": "Price of the product."
+          "description": "The price of the menu item."
         },
-        "imageId": {
+        "category": {
           "type": "string",
-          "description": "ID of the product image."
+          "enum": ["Appetizer", "Main Course", "Dessert", "Beverage"],
+          "description": "The category the menu item belongs to."
         },
-        "stock": {
-          "type": "number",
-          "description": "Current stock level of the product."
+        "imageUrl": {
+            "type": "string",
+            "description": "URL of the image for the menu item."
+        },
+        "isAvailable": {
+          "type": "boolean",
+          "description": "Whether the menu item is currently available."
         }
       },
-      "required": [
-        "name",
-        "price"
-      ]
+      "required": ["name", "price", "category", "isAvailable"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer's order for a specific table.",
+      "properties": {
+        "tableNumber": {
+          "type": "number",
+          "description": "The table number for the order."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/OrderItem"
+          },
+          "description": "The list of items included in the order."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Preparing", "Ready", "Served", "Paid"],
+          "description": "The current status of the order."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the order was created."
+        }
+      },
+      "required": ["tableNumber", "items", "status", "createdAt"]
+    },
+    "OrderItem": {
+        "title": "Order Item",
+        "type": "object",
+        "description": "Represents a single item within an order.",
+        "properties": {
+            "menuItemId": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            },
+            "quantity": {
+                "type": "number"
+            },
+            "price": {
+                "type": "number"
+            }
+        },
+        "required": ["menuItemId", "name", "quantity", "price"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["anonymous"]
   },
   "firestore": {
-    "/products/{productId}": {
-      "schema": {
-        "$ref": "#/entities/Product"
-      },
-      "description": "Stores all product information for the catalog."
+    "/menuItems/{menuItemId}": {
+      "schema": { "$ref": "#/entities/MenuItem" },
+      "description": "Stores all menu items for the restaurant."
+    },
+    "/orders/{orderId}": {
+        "schema": { "$ref": "#/entities/Order" },
+        "description": "Stores all customer orders."
     }
   }
 }

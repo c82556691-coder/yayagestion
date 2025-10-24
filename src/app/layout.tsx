@@ -8,8 +8,8 @@ import { FirebaseClientProvider } from '@/firebase';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'VentaPro',
-  description: 'Sistema de gestión automatizado para gestión de ventas.',
+  title: 'GastroGo',
+  description: 'Advanced management system for gastronomic services.',
 };
 
 export default function RootLayout({
