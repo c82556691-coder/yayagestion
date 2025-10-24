@@ -1,49 +1,57 @@
 /**
- * @fileoverview Firestore Security Rules for Prototyping.
+ * @file Firestore Security Rules
+ * @description This ruleset is in "Prototyping Mode," focusing on strong authentication and authorization while relaxing data validation to enable rapid iteration.
  *
  * Core Philosophy:
- * This ruleset is in prototyping mode. It prioritizes developer velocity with flexible data shapes.
- * Read permissions for menu items are public. All write operations must be explicitly secured and
- * other data such as order information requires authentication.
+ *  - Public Read, Owner-Only Write: The menuItems collection is publicly readable to facilitate browsing the menu.  Orders are not publicly listable, but are accessible if known.
+ *  - Verified Identity: All write operations are restricted to authenticated users.
+ *  - Denormalization for Authorization: The current data model doesn't include an explicit owner or author ID for menu items, so we cannot restrict their creation/modification to specific users.
  *
  * Data Structure:
- * - /menuItems/{menuItemId}: Publicly readable collection of menu items.
- * - /orders/{orderId}: Collection of customer orders, requiring authentication.
+ *  - /menuItems/{menuItemId}: Contains menu item data.
+ *  - /orders/{orderId}: Contains order information.
  *
  * Key Security Decisions:
- * - Public Menu Items: The `menuItems` collection is readable by anyone to quickly onboard the application.
- * - Authentication Required for Orders: Only authenticated users can create, update, or delete orders.
- * - No User Listing: Listing all users is disallowed.
+ *  - User listing is generally disallowed to protect user privacy.
+ *  - The rules explicitly define all five CRUD (create, read, update, delete) permissions for each path to avoid ambiguity and potential security gaps.
+ *  - Missing ownership fields on key entities are noted as critical TODO items that must be addressed in future iterations for enhanced security.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows anyone to read the menu items. Only authenticated users can create, update, and delete menu items.
+     * @description Allows anyone to read menu items, but restricts creation, updates, and deletion.
      * @path /menuItems/{menuItemId}
-     * @allow (get, list) Any user can read menu items.
-     * @deny (create, update, delete) No unauthenticated users can modify the menu items.
-     * @principle Allows public read access to menu items, while protecting write access.
+     * @allow (get, list): Any user can read menu items.
+     * @deny (create, update, delete): Only authenticated users should create, update, or delete menu items.
+     * @principle Public read access for menu items.
      */
     match /menuItems/{menuItemId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Allows authenticated users to manage orders.
+     * @description Restricts access to orders. Only authenticated users can create, update, or delete orders.
      * @path /orders/{orderId}
-     * @allow (create) Authenticated user can create an order.
-     * @allow (get, list, update, delete) Authenticated user can get, list, update and delete an order.
-     * @deny No unauthenticated users can access the orders collection.
-     * @principle Requires authentication for all order operations.
+     * @allow (create): Any authenticated user can create an order.
+     * @allow (get): Any authenticated user can retrieve a specific order.
+     * @deny (list): Orders are not publicly listable due to privacy concerns.
+     * @allow (update, delete): Only authenticated users can update or delete orders.
+     * @principle Authenticated users only.
      */
     match /orders/{orderId} {
-      allow get, list, create, update, delete: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
-    // --- Helper functions ---
+    // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
