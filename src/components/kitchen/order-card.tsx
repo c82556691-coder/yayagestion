@@ -10,8 +10,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface OrderCardProps {
   order: Order;
@@ -20,10 +21,10 @@ interface OrderCardProps {
 export function OrderCard({ order }: OrderCardProps) {
   const firestore = useFirestore();
 
-  const handleUpdateStatus = async (newStatus: 'Preparing' | 'Ready') => {
+  const handleUpdateStatus = (newStatus: 'Preparing' | 'Ready') => {
     if (!order.id) return;
     const orderRef = doc(firestore, 'orders', order.id);
-    await updateDoc(orderRef, { status: newStatus });
+    updateDocumentNonBlocking(orderRef, { status: newStatus });
   };
 
   const timeSince = (date: Date) => {
