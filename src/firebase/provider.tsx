@@ -76,8 +76,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     
     signInAnonymously(auth);
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
