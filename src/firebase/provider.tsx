@@ -76,16 +76,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
     
-    // Immediately try to sign in anonymously
-    signInAnonymously(auth);
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         if (firebaseUser && firestore) {
-           // Once the user is authenticated, seed the database.
-           // This will only run if the collection is empty.
+           // Once the user is authenticated, attempt to seed the database.
+           // This is wrapped in a non-blocking way.
            seedMenuItems(firestore);
         }
       },
@@ -94,6 +91,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
+    
+    // Immediately try to sign in anonymously
+    signInAnonymously(auth).catch((error) => {
+      console.error("Anonymous sign-in failed:", error);
+       setUserAuthState({ user: null, isUserLoading: false, userError: error });
+    });
+
+
     return () => unsubscribe(); // Cleanup
   }, [auth, firestore]); // Depends on the auth and firestore instances
 
