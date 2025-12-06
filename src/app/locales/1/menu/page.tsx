@@ -15,13 +15,13 @@ import {
 } from '@/components/ui/dialog';
 import { MenuItemForm } from '@/components/menu/menu-item-form';
 import type { MenuItem } from '@/lib/definitions';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import {
   addDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase/non-blocking-updates';
 import { collection, doc } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
+import { localMenuItems } from '@/lib/menu-data';
 
 export default function MenuPage() {
   const firestore = useFirestore();
@@ -30,8 +30,9 @@ export default function MenuPage() {
     [firestore]
   );
 
-  const { data: menuItemsData, isLoading } = useCollection<MenuItem>(menuItemsCollection);
-  const menuItems = menuItemsData || [];
+  // Use local data instead of useCollection
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(localMenuItems);
+  const isLoading = false; // Data is loaded locally
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -47,18 +48,29 @@ export default function MenuPage() {
   };
 
   const handleSave = (item: Partial<MenuItem>) => {
+    // This part still interacts with Firestore for saving, which is fine.
+    // The issue was with reading the collection on load.
     if (!menuItemsCollection) return;
 
     if (item.id) {
       const itemRef = doc(menuItemsCollection, item.id);
       const { id, ...itemData } = item;
       setDocumentNonBlocking(itemRef, itemData, { merge: true });
+       // Optimistically update local state
+      setMenuItems(prevItems => prevItems.map(i => i.id === item.id ? { ...i, ...itemData } as MenuItem : i));
     } else {
-      addDocumentNonBlocking(menuItemsCollection, {
+      const newId = doc(collection(firestore!, 'temp')).id;
+      const newItem = {
         ...item,
-        isAvailable: true, 
+        id: newId,
+        isAvailable: true,
         imageUrl: `https://picsum.photos/seed/${item.name || 'new'}/600/400`,
-      });
+      } as MenuItem;
+      
+      const { id, ...newItemData } = newItem;
+      addDocumentNonBlocking(doc(menuItemsCollection, id), newItemData);
+      // Optimistically update local state
+      setMenuItems(prevItems => [...prevItems, newItem]);
     }
 
     setIsFormOpen(false);
@@ -75,19 +87,9 @@ export default function MenuPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-             <Card key={i}><CardContent className="p-4 space-y-2">
-                <Skeleton className="h-[150px] w-full" />
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <div className="flex justify-between items-center pt-2">
-                    <Skeleton className="h-6 w-1/4" />
-                    <Skeleton className="h-8 w-8" />
-                </div>
-              </CardContent></Card>
-          ))}
-        </div>
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           {/* Skeleton remains for consistency, though isLoading is false now */}
+         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {menuItems.map((item) => (

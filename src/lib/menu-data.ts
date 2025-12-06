@@ -1,0 +1,58 @@
+import type { MenuItem } from '@/lib/definitions';
+
+export const localMenuItems: MenuItem[] = [
+  {
+    id: 'main1',
+    name: 'Grilled Salmon',
+    description: 'Fresh salmon grilled to perfection, served with seasonal vegetables.',
+    price: 22.5,
+    category: 'Main Course',
+    imageUrl: 'https://picsum.photos/seed/main1/600/400',
+    isAvailable: true,
+  },
+  {
+    id: 'main2',
+    name: 'Pasta Bolognese',
+    description: 'Classic Italian pasta with a rich, slow-cooked meat sauce.',
+    price: 18.0,
+    category: 'Main Course',
+    imageUrl: 'https://picsum.photos/seed/main2/600/400',
+    isAvailable: true,
+  },
+  {
+    id: 'appetizer1',
+    name: 'Bruschetta',
+    description: 'Toasted bread with fresh tomatoes, garlic, basil, and olive oil.',
+    price: 9.5,
+    category: 'Appetizer',
+    imageUrl: 'https://picsum.photos/seed/appetizer1/600/400',
+    isAvailable: true,
+  },
+  {
+    id: 'appetizer2',
+    name: 'Spring Rolls',
+    description: 'Crispy rolls filled with vegetables, served with a sweet chili sauce.',
+    price: 8.0,
+    category: 'Appetizer',
+    imageUrl: 'https://picsum.photos/seed/appetizer2/600/400',
+    isAvailable: false,
+  },
+  {
+    id: 'dessert1',
+    name: 'Chocolate Lava Cake',
+    description: 'Warm chocolate cake with a gooey molten center, served with vanilla ice cream.',
+    price: 10.0,
+    category: 'Dessert',
+    imageUrl: 'https://picsum.photos/seed/dessert1/600/400',
+    isAvailable: true,
+  },
+  {
+    id: 'beverage1',
+    name: 'Iced Tea',
+    description: 'Refreshing homemade iced tea with a hint of lemon.',
+    price: 4.0,
+    category: 'Beverage',
+    imageUrl: 'https://picsum.photos/seed/beverage1/600/400',
+    isAvailable: true,
+  },
+];

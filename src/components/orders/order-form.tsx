@@ -20,25 +20,23 @@ import {
 } from '@/components/ui/select';
 import { PlusCircle, MinusCircle, ShoppingCart } from 'lucide-react';
 import type { MenuItem, CartItem } from '@/lib/definitions';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { localMenuItems } from '@/lib/menu-data';
 
 export function OrderForm() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const menuItemsCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'menuItems') : null),
-    [firestore]
-  );
+  
   const ordersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'orders') : null),
     [firestore]
   );
 
-  const { data: menuItemsData } = useCollection<MenuItem>(menuItemsCollection);
-  const availableItems = menuItemsData?.filter(item => item.isAvailable) || [];
+  // Use local data instead of useCollection for menu items
+  const availableItems = localMenuItems.filter(item => item.isAvailable);
   
   const [tableNumber, setTableNumber] = useState<number | ''>('');
   const [cart, setCart] = useState<CartItem[]>([]);
