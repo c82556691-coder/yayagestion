@@ -7,8 +7,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  ClipboardList,
-  CookingPot,
   BookMarked,
   Warehouse,
   Beer,
@@ -16,18 +14,6 @@ import {
 import Link from 'next/link';
 
 const sections = [
-  {
-    title: 'Mesas y Pedidos',
-    href: '/locales/1/mesas',
-    icon: ClipboardList,
-    description: 'Crea nuevos pedidos y gestiona las mesas activas.',
-  },
-  {
-    title: 'Cocina',
-    href: '/locales/1/cocina',
-    icon: CookingPot,
-    description: 'Visualiza y gestiona los pedidos pendientes para la cocina.',
-  },
   {
     title: 'Cantina',
     href: '/locales/1/cantina',

@@ -9,8 +9,6 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Home,
-  ClipboardList,
-  CookingPot,
   BookMarked,
   Warehouse,
   Beer,
@@ -24,8 +22,6 @@ const globalNavItems = [
 
 const localNavItems = [
   { href: '/locales/1', label: 'Dashboard', icon: LayoutGrid, exact: true },
-  { href: '/locales/1/mesas', label: 'Mesas', icon: ClipboardList },
-  { href: '/locales/1/cocina', label: 'Cocina', icon: CookingPot },
   { href: '/locales/1/cantina', label: 'Cantina', icon: Beer },
   { href: '/locales/1/almacen', label: 'Almacén', icon: Warehouse },
   { href: '/locales/1/menu', label: 'Menú', icon: BookMarked },
@@ -33,7 +29,6 @@ const localNavItems = [
 
 export function Nav() {
   const pathname = usePathname();
-  // Show local nav if we are in a local's path, but not on the global warehouse page.
   const isLocalRoute = pathname.startsWith('/locales/1') && pathname !== '/locales/1/almacen';
 
   return (
