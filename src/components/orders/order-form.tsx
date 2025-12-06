@@ -68,25 +68,23 @@ export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
     if (cart.length === 0) {
       toast({
         title: 'Error',
-        description: 'Añada productos al carrito para crear un pedido.',
+        description: 'Añada productos al carrito para registrar un consumo.',
         variant: 'destructive',
       });
       return;
     }
 
-    // This data is now only for local state management
     const orderDataForState: Omit<Order, 'id' | 'createdAt'> = {
       tableNumber: tableNumber,
       items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
       status: 'Pending' as const,
     };
     
-    // Update the parent component's local state
     onOrderAdded(orderDataForState);
 
     toast({
-      title: 'Pedido Creado',
-      description: `El pedido para la mesa ${tableNumber} ha sido enviado a la cocina.`,
+      title: 'Consumo Registrado',
+      description: `Los productos vendidos en la mesa ${tableNumber} han sido registrados.`,
     });
 
     setCart([]);
@@ -95,8 +93,8 @@ export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nuevo Pedido (Mesa {tableNumber})</CardTitle>
-        <CardDescription>Añada productos al pedido de la mesa.</CardDescription>
+        <CardTitle>Registrar Consumo (Mesa {tableNumber})</CardTitle>
+        <CardDescription>Añada productos consumidos en la mesa.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -172,7 +170,7 @@ export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
             className="w-full"
             onClick={handleSubmitOrder}
           >
-            Crear Pedido
+            Registrar Producto Vendido por Mesa
           </Button>
         </CardFooter>
       )}
