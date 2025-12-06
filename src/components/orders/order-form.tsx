@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, MinusCircle, ShoppingCart } from 'lucide-react';
 import type { MenuItem, CartItem, Order } from '@/lib/definitions';
@@ -20,10 +19,11 @@ import { useToast } from '@/hooks/use-toast';
 import { localMenuItems } from '@/lib/menu-data';
 
 interface OrderFormProps {
+  tableNumber: number;
   onOrderAdded: (order: Omit<Order, 'id' | 'createdAt'>) => void;
 }
 
-export function OrderForm({ onOrderAdded }: OrderFormProps) {
+export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -33,8 +33,6 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
   );
 
   const availableItems = localMenuItems.filter((item) => item.isAvailable);
-
-  const [tableNumber, setTableNumber] = useState<number | ''>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (item: MenuItem) => {
@@ -76,17 +74,17 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleSubmitOrder = async () => {
-    if (!tableNumber || cart.length === 0) {
+    if (cart.length === 0) {
       toast({
         title: 'Error',
-        description: 'Please enter a table number and add items to the cart.',
+        description: 'Añada productos al carrito para crear un pedido.',
         variant: 'destructive',
       });
       return;
     }
 
     const orderDataForFirestore = {
-      tableNumber: Number(tableNumber),
+      tableNumber: tableNumber,
       items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
       status: 'Pending' as const,
       createdAt: serverTimestamp(),
@@ -99,7 +97,7 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
 
     // Also update the parent component's local state
     const orderDataForState: Omit<Order, 'id' | 'createdAt'> = {
-        tableNumber: Number(tableNumber),
+        tableNumber: tableNumber,
         items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
         status: 'Pending' as const,
     };
@@ -107,37 +105,22 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
 
 
     toast({
-      title: 'Order Placed!',
-      description: `Order for table ${tableNumber} has been sent to the kitchen.`,
+      title: 'Pedido Creado',
+      description: `El pedido para la mesa ${tableNumber} ha sido enviado a la cocina.`,
     });
 
     setCart([]);
-    setTableNumber('');
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Order</CardTitle>
-        <CardDescription>Create a new order for a table.</CardDescription>
+        <CardTitle>Nuevo Pedido (Mesa {tableNumber})</CardTitle>
+        <CardDescription>Añada productos al pedido de la mesa.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <Label htmlFor="tableNumber">Table Number</Label>
-          <Input
-            id="tableNumber"
-            type="number"
-            placeholder="e.g., 5"
-            value={tableNumber}
-            onChange={(e) =>
-              setTableNumber(e.target.value === '' ? '' : Number(e.target.value))
-            }
-            min="1"
-          />
-        </div>
-
         <div className="space-y-2">
-          <Label>Menu Items</Label>
+          <Label>Menú</Label>
           <div className="grid grid-cols-2 gap-2">
             {availableItems.map((item) => (
               <Button
@@ -155,7 +138,7 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
         <div className="space-y-4">
           <h4 className="font-medium text-lg flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Cart
+            Carrito
           </h4>
           {cart.length > 0 ? (
             <div className="space-y-4">
@@ -194,7 +177,7 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              The cart is empty.
+              El carrito está vacío.
             </p>
           )}
         </div>
@@ -208,9 +191,8 @@ export function OrderForm({ onOrderAdded }: OrderFormProps) {
           <Button
             className="w-full"
             onClick={handleSubmitOrder}
-            disabled={!tableNumber}
           >
-            Place Order
+            Crear Pedido
           </Button>
         </CardFooter>
       )}

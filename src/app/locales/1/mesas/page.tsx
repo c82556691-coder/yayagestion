@@ -16,11 +16,6 @@ export default function MesasPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold tracking-tight">Gestión de Mesas</h2>
-        <Button asChild>
-            <Link href="/locales/1/pedidos">
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Pedido
-            </Link>
-        </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {tables.map((table) => (
@@ -28,12 +23,14 @@ export default function MesasPage() {
             <CardHeader>
               <CardTitle>{table.name}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
+            <CardContent className="flex flex-col gap-4">
+              <p className="text-muted-foreground text-sm">
                 Actualmente libre.
               </p>
-              <Button variant="outline" className="w-full">
-                Ver Pedido
+              <Button asChild>
+                <Link href={`/locales/1/pedidos?table=${table.id}`}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Añadir Pedido
+                </Link>
               </Button>
             </CardContent>
           </Card>
