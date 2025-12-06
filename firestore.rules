@@ -3,55 +3,41 @@
  * @description This ruleset is in "Prototyping Mode," focusing on strong authentication and authorization while relaxing data validation to enable rapid iteration.
  *
  * Core Philosophy:
- *  - Public Read, Owner-Only Write: The menuItems collection is publicly readable to facilitate browsing the menu.  Orders are not publicly listable, but are accessible if known.
- *  - Verified Identity: All write operations are restricted to authenticated users.
- *  - Denormalization for Authorization: The current data model doesn't include an explicit owner or author ID for menu items, so we cannot restrict their creation/modification to specific users.
+ *  - Authenticated Access: Any authenticated user (including anonymous) can read and write to the necessary collections for the app to function. This is suitable for prototyping.
+ *  - Future Proofing: While open now, the rules are structured to easily add ownership and role-based checks in the future.
  *
  * Data Structure:
  *  - /menuItems/{menuItemId}: Contains menu item data.
  *  - /orders/{orderId}: Contains order information.
  *
  * Key Security Decisions:
- *  - User listing is generally disallowed to protect user privacy.
- *  - The rules explicitly define all five CRUD (create, read, update, delete) permissions for each path to avoid ambiguity and potential security gaps.
- *  - Missing ownership fields on key entities are noted as critical TODO items that must be addressed in future iterations for enhanced security.
+ *  - Public read on `menuItems` allows anyone to browse the menu. Writes are restricted to authenticated users.
+ *  - `orders` are fully accessible by any authenticated user, which is necessary for the kitchen and main ordering views to function in this prototype.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Allows anyone to read menu items, but restricts creation, updates, and deletion.
-     * @path /menuItems/{menuItemId}
-     * @allow (get, list): Any user can read menu items.
-     * @deny (create, update, delete): Only authenticated users should create, update, or delete menu items.
-     * @principle Public read access for menu items.
-     */
-    match /menuItems/{menuItemId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-    }
-
-    /**
-     * @description Restricts access to orders. Only authenticated users can create, update, or delete orders.
-     * @path /orders/{orderId}
-     * @allow (get, list): Any authenticated user can retrieve a specific order or list all orders. This is required for the kitchen and order tracking views.
-     * @allow (create): Any authenticated user can create an order.
-     * @allow (update, delete): Only authenticated users can update or delete orders.
-     * @principle Authenticated users only.
-     */
-    match /orders/{orderId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-    }
-
     // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * @description Allows anyone to read menu items, but restricts creation, updates, and deletion to authenticated users.
+     */
+    match /menuItems/{menuItemId} {
+      allow get: if true;
+      allow list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Allows any authenticated user full access to create, read, update, and delete orders.
+     * This is required for the kitchen and order tracking views to function correctly.
+     */
+    match /orders/{orderId} {
+      allow read, write: if isSignedIn();
     }
   }
 }
