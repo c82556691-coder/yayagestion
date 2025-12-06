@@ -7,13 +7,16 @@ import {
 } from '@/components/ui/sidebar';
 import { Nav } from './nav';
 import Header from './header';
+import Link from 'next/link';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4">
-          <span className="text-xl font-semibold">CRM Centro Control Locales</span>
+          <Link href="/">
+            <span className="text-xl font-semibold cursor-pointer">CRM Centro Control Locales</span>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
           <Nav />

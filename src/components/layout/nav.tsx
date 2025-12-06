@@ -8,23 +8,33 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import {
+  Home,
   ClipboardList,
   CookingPot,
   BookMarked,
+  Warehouse,
+  Beer,
+  LayoutGrid,
 } from 'lucide-react';
 
-const navItems = [
-  { href: '/', label: 'Pedidos', icon: ClipboardList },
-  { href: '/kitchen', label: 'Cocina', icon: CookingPot },
-  { href: '/menu', label: 'Menú', icon: BookMarked },
+const globalNavItems = [{ href: '/', label: 'Inicio', icon: Home }];
+
+const localNavItems = [
+  { href: '/locales/1', label: 'Dashboard', icon: LayoutGrid, exact: true },
+  { href: '/locales/1/mesas', label: 'Mesas', icon: ClipboardList },
+  { href: '/locales/1/cocina', label: 'Cocina', icon: CookingPot },
+  { href: '/locales/1/cantina', label: 'Cantina', icon: Beer },
+  { href: '/locales/1/almacen', label: 'Almacén', icon: Warehouse },
+  { href: '/locales/1/menu', label: 'Menú', icon: BookMarked },
 ];
 
 export function Nav() {
   const pathname = usePathname();
+  const isLocalRoute = pathname.startsWith('/locales/1');
 
   return (
     <SidebarMenu>
-      {navItems.map((item) => (
+      {globalNavItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
@@ -38,6 +48,32 @@ export function Nav() {
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
+
+      {isLocalRoute && (
+        <>
+          <SidebarMenuItem>
+            <span className="p-2 text-xs font-semibold text-muted-foreground">
+              Cafetería Avellaneda
+            </span>
+          </SidebarMenuItem>
+          {localNavItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={
+                  item.exact ? pathname === item.href : pathname.startsWith(item.href)
+                }
+                tooltip={item.label}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </>
+      )}
     </SidebarMenu>
   );
 }
