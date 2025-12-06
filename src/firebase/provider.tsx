@@ -5,8 +5,6 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { seedMenuItems } from '@/lib/seed';
-
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -80,11 +78,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-        if (firebaseUser) {
-           // Once the user is authenticated, attempt to seed the database.
-           // This is wrapped in a non-blocking way.
-           seedMenuItems(firestore);
-        }
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -100,7 +93,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
 
     return () => unsubscribe(); // Cleanup
-  }, [auth, firestore]); // Depends on the auth and firestore instances
+  }, [auth]); // Depends on the auth and firestore instances
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
