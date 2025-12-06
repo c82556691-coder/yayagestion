@@ -13,7 +13,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-4">
-          <span className="text-xl font-semibold">GastroGo</span>
+          <span className="text-xl font-semibold">CRM Centro Control Locales</span>
         </SidebarHeader>
         <SidebarContent>
           <Nav />

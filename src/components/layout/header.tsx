@@ -8,7 +8,7 @@ export default function Header() {
       <div className="w-full flex-1">
         <h1 className="text-lg font-semibold flex items-center gap-2">
           <Utensils className="h-5 w-5 text-primary" />
-          GastroGo
+          CRM Centro Control Locales
         </h1>
       </div>
     </header>
