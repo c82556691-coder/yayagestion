@@ -11,39 +11,37 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { PlusCircle, MinusCircle, ShoppingCart } from 'lucide-react';
-import type { MenuItem, CartItem } from '@/lib/definitions';
+import type { MenuItem, CartItem, Order } from '@/lib/definitions';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { localMenuItems } from '@/lib/menu-data';
 
-export function OrderForm() {
+interface OrderFormProps {
+  onOrderAdded: (order: Omit<Order, 'id' | 'createdAt'>) => void;
+}
+
+export function OrderForm({ onOrderAdded }: OrderFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  
+
   const ordersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'orders') : null),
     [firestore]
   );
 
-  // Use local data instead of useCollection for menu items
-  const availableItems = localMenuItems.filter(item => item.isAvailable);
-  
+  const availableItems = localMenuItems.filter((item) => item.isAvailable);
+
   const [tableNumber, setTableNumber] = useState<number | ''>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (item: MenuItem) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
+      const existingItem = prevCart.find(
+        (cartItem) => cartItem.id === item.id
+      );
       if (existingItem) {
         return prevCart.map((cartItem) =>
           cartItem.id === item.id
@@ -51,7 +49,15 @@ export function OrderForm() {
             : cartItem
         );
       }
-      return [...prevCart, { id: item.id!, name: item.name, price: item.price, quantity: 1 }];
+      return [
+        ...prevCart,
+        {
+          id: item.id!,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+        },
+      ];
     });
   };
 
@@ -70,33 +76,44 @@ export function OrderForm() {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleSubmitOrder = async () => {
-    if (!tableNumber || cart.length === 0 || !ordersCollection) {
-        toast({
-            title: 'Error',
-            description: 'Please enter a table number and add items to the cart.',
-            variant: 'destructive',
-        });
-        return;
+    if (!tableNumber || cart.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a table number and add items to the cart.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    const orderData = {
+    const orderDataForFirestore = {
       tableNumber: Number(tableNumber),
       items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
       status: 'Pending' as const,
       createdAt: serverTimestamp(),
     };
     
-    addDocumentNonBlocking(ordersCollection, orderData);
+    // Still send to Firestore for persistence
+    if (ordersCollection) {
+        addDocumentNonBlocking(ordersCollection, orderDataForFirestore);
+    }
+
+    // Also update the parent component's local state
+    const orderDataForState: Omit<Order, 'id' | 'createdAt'> = {
+        tableNumber: Number(tableNumber),
+        items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
+        status: 'Pending' as const,
+    };
+    onOrderAdded(orderDataForState);
+
 
     toast({
-        title: 'Order Placed!',
-        description: `Order for table ${tableNumber} has been sent to the kitchen.`,
+      title: 'Order Placed!',
+      description: `Order for table ${tableNumber} has been sent to the kitchen.`,
     });
 
     setCart([]);
     setTableNumber('');
   };
-
 
   return (
     <Card>
@@ -112,62 +129,89 @@ export function OrderForm() {
             type="number"
             placeholder="e.g., 5"
             value={tableNumber}
-            onChange={(e) => setTableNumber(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setTableNumber(e.target.value === '' ? '' : Number(e.target.value))
+            }
             min="1"
           />
         </div>
 
         <div className="space-y-2">
-            <Label>Menu Items</Label>
-            <div className="grid grid-cols-2 gap-2">
-                {availableItems.map(item => (
-                    <Button key={item.id} variant="outline" size="sm" onClick={() => addToCart(item)}>
-                        {item.name}
-                    </Button>
-                ))}
-            </div>
+          <Label>Menu Items</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {availableItems.map((item) => (
+              <Button
+                key={item.id}
+                variant="outline"
+                size="sm"
+                onClick={() => addToCart(item)}
+              >
+                {item.name}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-4">
-            <h4 className="font-medium text-lg flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Cart
-            </h4>
-            {cart.length > 0 ? (
-                <div className="space-y-4">
-                    {cart.map(item => (
-                        <div key={item.id} className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                                    <MinusCircle className="h-4 w-4" />
-                                </Button>
-                                <span className="font-bold w-4 text-center">{item.quantity}</span>
-                                <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+          <h4 className="font-medium text-lg flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Cart
+          </h4>
+          {cart.length > 0 ? (
+            <div className="space-y-4">
+              {cart.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ${item.price.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    >
+                      <MinusCircle className="h-4 w-4" />
+                    </Button>
+                    <span className="font-bold w-4 text-center">
+                      {item.quantity}
+                    </span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">The cart is empty.</p>
-            )}
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              The cart is empty.
+            </p>
+          )}
         </div>
-
       </CardContent>
       {cart.length > 0 && (
         <CardFooter className="flex flex-col gap-4">
-            <div className="flex justify-between font-bold text-xl w-full">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-            </div>
-            <Button className="w-full" onClick={handleSubmitOrder} disabled={!tableNumber}>
-                Place Order
-            </Button>
+          <div className="flex justify-between font-bold text-xl w-full">
+            <span>Total</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
+          <Button
+            className="w-full"
+            onClick={handleSubmitOrder}
+            disabled={!tableNumber}
+          >
+            Place Order
+          </Button>
         </CardFooter>
       )}
     </Card>
