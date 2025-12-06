@@ -11,8 +11,7 @@
  *  - /orders/{orderId}: Contains order information.
  *
  * Key Security Decisions:
- *  - Public read on `menuItems` allows anyone to browse the menu. Writes are restricted to authenticated users.
- *  - `orders` are fully accessible by any authenticated user, which is necessary for the kitchen and main ordering views to function in this prototype.
+ *  - `menuItems` and `orders` are fully accessible by any authenticated user. This is required for all app views to function in this prototype.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -24,12 +23,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read menu items, but restricts creation, updates, and deletion to authenticated users.
+     * @description Allows any authenticated user full read and write access to menu items.
+     * This is required for the menu management and ordering pages to function.
      */
     match /menuItems/{menuItemId} {
-      allow get: if true;
-      allow list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
