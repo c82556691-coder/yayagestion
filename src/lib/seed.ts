@@ -9,6 +9,8 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import placeholderImages from './placeholder-images.json';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 // Function to seed the menuItems collection
 export async function seedMenuItems(db: Firestore) {
@@ -17,7 +19,7 @@ export async function seedMenuItems(db: Firestore) {
 
   // If the collection is not empty, don't seed
   if (!snapshot.empty) {
-    console.log('Menu items collection already has data. Skipping seed.');
+    // console.log('Menu items collection already has data. Skipping seed.');
     return;
   }
 
@@ -93,15 +95,23 @@ export async function seedMenuItems(db: Firestore) {
     }
   ];
 
+  let allData = {};
   itemsToSeed.forEach((item) => {
     const docRef = doc(menuItemsCollection); // Create a new doc with a random ID
     batch.set(docRef, item);
+    allData = {...allData, [docRef.id]: item};
   });
+  
+  batch.commit().catch((error) => {
+      console.log("Error seeding menu items, firing contextual error", error);
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: menuItemsCollection.path,
+          operation: 'write', // Batch write is a 'write' operation
+          requestResourceData: allData,
+        })
+      );
+    });
 
-  try {
-    await batch.commit();
-    console.log('Menu items seeded successfully!');
-  } catch (error) {
-    console.error('Error seeding menu items:', error);
-  }
 }
