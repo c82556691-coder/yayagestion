@@ -12,9 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, MinusCircle, ShoppingCart } from 'lucide-react';
 import type { MenuItem, CartItem, Order } from '@/lib/definitions';
-import { useFirestore, useMemoFirebase } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { localMenuItems } from '@/lib/menu-data';
 
@@ -24,13 +21,7 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
-  const firestore = useFirestore();
   const { toast } = useToast();
-
-  const ordersCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'orders') : null),
-    [firestore]
-  );
 
   const availableItems = localMenuItems.filter((item) => item.isAvailable);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -83,26 +74,15 @@ export function OrderForm({ tableNumber, onOrderAdded }: OrderFormProps) {
       return;
     }
 
-    const orderDataForFirestore = {
+    // This data is now only for local state management
+    const orderDataForState: Omit<Order, 'id' | 'createdAt'> = {
       tableNumber: tableNumber,
       items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
       status: 'Pending' as const,
-      createdAt: serverTimestamp(),
     };
     
-    // Still send to Firestore for persistence
-    if (ordersCollection) {
-        addDocumentNonBlocking(ordersCollection, orderDataForFirestore);
-    }
-
-    // Also update the parent component's local state
-    const orderDataForState: Omit<Order, 'id' | 'createdAt'> = {
-        tableNumber: tableNumber,
-        items: cart.map(({ id, ...rest }) => ({ menuItemId: id, ...rest })),
-        status: 'Pending' as const,
-    };
+    // Update the parent component's local state
     onOrderAdded(orderDataForState);
-
 
     toast({
       title: 'Pedido Creado',
