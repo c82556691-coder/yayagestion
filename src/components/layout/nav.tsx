@@ -13,6 +13,7 @@ import {
   Warehouse,
   Beer,
   LayoutGrid,
+  Utensils,
 } from 'lucide-react';
 
 const globalNavItems = [
@@ -22,8 +23,9 @@ const globalNavItems = [
 
 const localNavItems = [
   { href: '/locales/1', label: 'Dashboard', icon: LayoutGrid, exact: true },
+  { href: '/locales/1/mesas', label: 'Mesas y Pedidos', icon: Utensils },
   { href: '/locales/1/cantina', label: 'Cantina', icon: Beer },
-  { href: '/locales/1/almacen', label: 'Almacén', icon: Warehouse },
+  { href: '/locales/1/almacen', label: 'Almacén Local', icon: Warehouse },
   { href: '/locales/1/menu', label: 'Menú', icon: BookMarked },
 ];
 
@@ -56,6 +58,11 @@ export function Nav() {
             </span>
           </SidebarMenuItem>
           {localNavItems.map((item) => {
+            // Special rule for Almacen Local to avoid conflict with global Almacen
+            if (item.href === '/locales/1/almacen' && pathname === '/locales/1/almacen') {
+                return null;
+            }
+
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton

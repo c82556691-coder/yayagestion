@@ -10,10 +10,17 @@ import {
   BookMarked,
   Warehouse,
   Beer,
+  Utensils,
 } from 'lucide-react';
 import Link from 'next/link';
 
 const sections = [
+  {
+    title: 'Mesas y Pedidos',
+    href: '/locales/1/mesas',
+    icon: Utensils,
+    description: 'Gestiona las mesas y los pedidos de los clientes.',
+  },
   {
     title: 'Cantina',
     href: '/locales/1/cantina',
