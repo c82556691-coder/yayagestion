@@ -5,9 +5,13 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  collection,
+  writeBatch,
+  getDocs,
   CollectionReference,
   DocumentReference,
   SetOptions,
+  Firestore,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
@@ -22,7 +26,7 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
       'permission-error',
       new FirestorePermissionError({
         path: docRef.path,
-        operation: 'write', // or 'create'/'update' based on options
+        operation: options && 'merge' in options ? 'update' : 'create',
         requestResourceData: data,
       })
     )
