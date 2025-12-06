@@ -80,7 +80,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-        if (firebaseUser && firestore) {
+        if (firebaseUser) {
            // Once the user is authenticated, attempt to seed the database.
            // This is wrapped in a non-blocking way.
            seedMenuItems(firestore);
