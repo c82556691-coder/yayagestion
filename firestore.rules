@@ -1,41 +1,11 @@
-/**
- * @file Firestore Security Rules
- * @description This ruleset is in "Prototyping Mode," focusing on strong authentication and authorization while relaxing data validation to enable rapid iteration.
- *
- * Core Philosophy:
- *  - Authenticated Access: Any authenticated user (including anonymous) can read and write to the necessary collections for the app to function. This is suitable for prototyping.
- *  - Future Proofing: While open now, the rules are structured to easily add ownership and role-based checks in the future.
- *
- * Data Structure:
- *  - /menuItems/{menuItemId}: Contains menu item data.
- *  - /orders/{orderId}: Contains order information.
- *
- * Key Security Decisions:
- *  - `menuItems` and `orders` are fully accessible by any authenticated user. This is required for all app views to function in this prototype.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if the user is signed in.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Allows any authenticated user full read and write access to menu items.
-     * This is required for the menu management and ordering pages to function.
-     */
-    match /menuItems/{menuItemId} {
-      allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Allows any authenticated user full access to create, read, update, and delete orders.
-     * This is required for the kitchen and order tracking views to function correctly.
-     */
-    match /orders/{orderId} {
-      allow read, write: if isSignedIn();
+    // Allow read/write access to any authenticated user for all collections.
+    // This is suitable for prototyping and ensures the application can function
+    // without permission errors during development.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
