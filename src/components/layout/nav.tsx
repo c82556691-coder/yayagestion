@@ -33,17 +33,8 @@ const localNavItems = [
 
 export function Nav() {
   const pathname = usePathname();
-  const isLocalRoute = pathname.startsWith('/locales/1');
-
-  // Filter out Almacén from localNavItems if we are showing it globally
-  const filteredLocalNavItems = localNavItems.filter(item => {
-      if (item.label === 'Almacén') {
-          // If any global nav item already links to Almacén, don't show it in local nav.
-          return !globalNavItems.some(gItem => gItem.label === 'Almacén' && pathname.startsWith('/locales/1'));
-      }
-      return true;
-  });
-
+  // Show local nav if we are in a local's path, but not on the global warehouse page.
+  const isLocalRoute = pathname.startsWith('/locales/1') && pathname !== '/locales/1/almacen';
 
   return (
     <SidebarMenu>
@@ -70,10 +61,6 @@ export function Nav() {
             </span>
           </SidebarMenuItem>
           {localNavItems.map((item) => {
-            // Hide Almacen from local nav if global Almacen link exists and is active
-            if (item.label === 'Almacén' && globalNavItems.some(i => i.label === 'Almacén')) {
-              return null;
-            }
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
