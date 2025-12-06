@@ -37,15 +37,13 @@ service cloud.firestore {
     /**
      * @description Restricts access to orders. Only authenticated users can create, update, or delete orders.
      * @path /orders/{orderId}
+     * @allow (get, list): Any authenticated user can retrieve a specific order or list all orders. This is required for the kitchen and order tracking views.
      * @allow (create): Any authenticated user can create an order.
-     * @allow (get): Any authenticated user can retrieve a specific order.
-     * @allow (list): Authenticated users can list orders for the kitchen and order tracking views.
      * @allow (update, delete): Only authenticated users can update or delete orders.
      * @principle Authenticated users only.
      */
     match /orders/{orderId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();

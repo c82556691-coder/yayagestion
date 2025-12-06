@@ -45,6 +45,8 @@ export function OrderList({ title, orders, isLoading }: OrderListProps) {
         return 'default';
       case 'Served':
         return 'outline';
+      case 'Paid':
+        return 'default';
       default:
         return 'default';
     }
