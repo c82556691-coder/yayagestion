@@ -8,6 +8,7 @@ export type MenuItem = {
   category: 'Appetizer' | 'Main Course' | 'Dessert' | 'Beverage';
   imageUrl: string;
   isAvailable: boolean;
+  stock: number;
 };
 
 export type OrderItem = {

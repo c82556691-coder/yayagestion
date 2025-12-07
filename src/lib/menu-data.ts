@@ -9,6 +9,7 @@ export const localMenuItems: MenuItem[] = [
     category: 'Main Course',
     imageUrl: 'https://picsum.photos/seed/main1/600/400',
     isAvailable: true,
+    stock: 30,
   },
   {
     id: 'main2',
@@ -18,6 +19,7 @@ export const localMenuItems: MenuItem[] = [
     category: 'Main Course',
     imageUrl: 'https://picsum.photos/seed/main2/600/400',
     isAvailable: true,
+    stock: 45,
   },
   {
     id: 'appetizer1',
@@ -27,6 +29,7 @@ export const localMenuItems: MenuItem[] = [
     category: 'Appetizer',
     imageUrl: 'https://picsum.photos/seed/appetizer1/600/400',
     isAvailable: true,
+    stock: 50,
   },
   {
     id: 'appetizer2',
@@ -36,6 +39,7 @@ export const localMenuItems: MenuItem[] = [
     category: 'Appetizer',
     imageUrl: 'https://picsum.photos/seed/appetizer2/600/400',
     isAvailable: false,
+    stock: 0,
   },
   {
     id: 'dessert1',
@@ -45,6 +49,7 @@ export const localMenuItems: MenuItem[] = [
     category: 'Dessert',
     imageUrl: 'https://picsum.photos/seed/dessert1/600/400',
     isAvailable: true,
+    stock: 25,
   },
   {
     id: 'beverage1',
@@ -54,5 +59,6 @@ export const localMenuItems: MenuItem[] = [
     category: 'Beverage',
     imageUrl: 'https://picsum.photos/seed/beverage1/600/400',
     isAvailable: true,
+    stock: 100,
   },
 ];

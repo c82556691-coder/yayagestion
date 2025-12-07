@@ -1,9 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { OrderForm } from '@/components/orders/order-form';
-import { OrderList } from '@/components/orders/order-list';
 import type { Order } from '@/lib/definitions';
 import { Timestamp } from 'firebase/firestore';
+import { InventoryChart } from '@/components/inventory/inventory-chart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { localMenuItems } from '@/lib/menu-data';
 
 const tables = [
   { id: 1, name: 'Mesa 1' },
@@ -14,7 +16,6 @@ const tables = [
 
 export default function MesasPage() {
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleOrderAdded = (newOrder: Omit<Order, 'id' | 'createdAt'>) => {
     const fullOrder: Order = {
@@ -22,8 +23,15 @@ export default function MesasPage() {
       id: `local-${Date.now()}`, // Create a temporary local ID
       createdAt: Timestamp.now(),
     };
+    // This logic can be expanded later to update inventory, etc.
     setActiveOrders((prevOrders) => [fullOrder, ...prevOrders]);
   };
+  
+  const inventoryData = localMenuItems.map(item => ({
+    name: item.name,
+    stock: item.stock,
+  }));
+
 
   return (
     <div className="p-4 md:p-8">
@@ -43,11 +51,14 @@ export default function MesasPage() {
       </div>
 
       <div>
-        <OrderList
-          title="Pedidos Activos"
-          orders={activeOrders}
-          isLoading={isLoading}
-        />
+        <Card>
+            <CardHeader>
+                <CardTitle>Inventario del Local</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <InventoryChart data={inventoryData} />
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
