@@ -1,5 +1,24 @@
 import type { Timestamp } from 'firebase/firestore';
 
+export type Product = {
+  id?: string;
+  name: string;
+  description: string;
+  unit: 'kg' | 'liters' | 'units';
+};
+
+export type CentralStockItem = {
+  productId: string;
+  quantity: number;
+};
+
+export type LocalStockItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+};
+
 export type MenuItem = {
   id?: string;
   name: string;

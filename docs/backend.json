@@ -1,5 +1,61 @@
 {
   "entities": {
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a basic inventory item.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the product (e.g., 'Coffee Beans')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the product."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of measurement for the product (e.g., 'kg', 'liters', 'units')."
+        }
+      },
+      "required": ["name", "unit"]
+    },
+    "CentralStockItem": {
+      "title": "Central Stock Item",
+      "type": "object",
+      "description": "Represents a product's stock in the central warehouse.",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The total quantity available in the central warehouse."
+        }
+      },
+      "required": ["productId", "quantity"]
+    },
+    "LocalStockItem": {
+      "title": "Local Stock Item",
+      "type": "object",
+      "description": "Represents a product's stock in a specific location's inventory.",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity available at the local inventory."
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": ["productId", "name", "quantity", "unit"]
+    },
     "MenuItem": {
       "title": "Menu Item",
       "type": "object",
@@ -23,8 +79,8 @@
           "description": "The category the menu item belongs to."
         },
         "imageUrl": {
-            "type": "string",
-            "description": "URL of the image for the menu item."
+          "type": "string",
+          "description": "URL of the image for the menu item."
         },
         "isAvailable": {
           "type": "boolean",
@@ -55,45 +111,57 @@
           "description": "The current status of the order."
         },
         "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "The timestamp when the order was created."
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the order was created."
         }
       },
       "required": ["tableNumber", "items", "status", "createdAt"]
     },
     "OrderItem": {
-        "title": "Order Item",
-        "type": "object",
-        "description": "Represents a single item within an order.",
-        "properties": {
-            "menuItemId": {
-                "type": "string"
-            },
-            "name": {
-                "type": "string"
-            },
-            "quantity": {
-                "type": "number"
-            },
-            "price": {
-                "type": "number"
-            }
+      "title": "Order Item",
+      "type": "object",
+      "description": "Represents a single item within an order.",
+      "properties": {
+        "menuItemId": {
+          "type": "string"
         },
-        "required": ["menuItemId", "name", "quantity", "price"]
+        "name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "price": {
+          "type": "number"
+        }
+      },
+      "required": ["menuItemId", "name", "quantity", "price"]
     }
   },
   "auth": {
     "providers": ["anonymous"]
   },
   "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Master list of all products."
+    },
+    "/centralStock/{productId}": {
+      "schema": { "$ref": "#/entities/CentralStockItem" },
+      "description": "Stock levels in the central warehouse."
+    },
+    "/locations/{locationId}/localStock/{productId}": {
+      "schema": { "$ref": "#/entities/LocalStockItem" },
+      "description": "Stock levels for a specific location."
+    },
     "/menuItems/{menuItemId}": {
       "schema": { "$ref": "#/entities/MenuItem" },
       "description": "Stores all menu items for the restaurant."
     },
     "/orders/{orderId}": {
-        "schema": { "$ref": "#/entities/Order" },
-        "description": "Stores all customer orders."
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores all customer orders."
     }
   }
 }
