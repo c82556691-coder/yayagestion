@@ -1,8 +1,9 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { OrderForm } from '@/components/orders/order-form';
+import { OrderList } from '@/components/orders/order-list';
+import type { Order } from '@/lib/definitions';
+import { Timestamp } from 'firebase/firestore';
 
 const tables = [
   { id: 1, name: 'Mesa 1' },
@@ -12,29 +13,41 @@ const tables = [
 ];
 
 export default function MesasPage() {
+  const [activeOrders, setActiveOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleOrderAdded = (newOrder: Omit<Order, 'id' | 'createdAt'>) => {
+    const fullOrder: Order = {
+      ...newOrder,
+      id: `local-${Date.now()}`, // Create a temporary local ID
+      createdAt: Timestamp.now(),
+    };
+    setActiveOrders((prevOrders) => [fullOrder, ...prevOrders]);
+  };
+
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold tracking-tight">Gestión de Mesas</h2>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight mb-6">
+          Gestión de Mesas y Consumos
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {tables.map((table) => (
+            <OrderForm
+              key={table.id}
+              tableNumber={table.id}
+              onOrderAdded={handleOrderAdded}
+            />
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {tables.map((table) => (
-          <Card key={table.id}>
-            <CardHeader>
-              <CardTitle>{table.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <p className="text-muted-foreground text-sm">
-                Actualmente libre.
-              </p>
-              <Button asChild>
-                <Link href={`/locales/1/pedidos?table=${table.id}`}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Añadir Pedido
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+
+      <div>
+        <OrderList
+          title="Pedidos Activos"
+          orders={activeOrders}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
